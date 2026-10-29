@@ -882,14 +882,20 @@ $('muteBtn').onclick = () => { save.muted = !save.muted; persist(); Sound.setMut
 
 /* ================= Loop ================= */
 let last = performance.now(), slowAvg = 1 / 60;
+let loggedErr = false;
 function frame(t){
+  requestAnimationFrame(frame);                 // schedule first, so one bad frame can never freeze the game
   const raw = (t - last) / 1000, dt = Math.min(raw, 1 / 30); last = t;
-  // frame-rate guard: if frames average over ~22 ms for a few seconds of play, render at 1x pixels
-  if (!lowRes && G && screen === 'play' && raw < .5){ slowAvg = slowAvg * .97 + raw * .03; if (slowAvg > .022 && G.t > 5){ lowRes = true; resize(); } }
-  if (G && screen === 'play' && !paused && !G.dead) update(dt);
-  else if (G && G.dead){ for (const p of G.parts){ p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; } }
-  draw();
-  requestAnimationFrame(frame);
+  try {
+    // frame-rate guard: if frames average over ~22 ms for a few seconds of play, render at 1x pixels
+    if (!lowRes && G && screen === 'play' && raw < .5){ slowAvg = slowAvg * .97 + raw * .03; if (slowAvg > .022 && G.t > 5){ lowRes = true; resize(); } }
+    if (G && screen === 'play' && !paused && !G.dead) update(dt);
+    else if (G && G.dead){ for (const p of G.parts){ p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; } }
+    draw();
+  } catch(err){
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    if (!loggedErr){ loggedErr = true; console.error('Bassline frame error', err); }
+  }
 }
 refreshMenu();
 requestAnimationFrame(frame);
