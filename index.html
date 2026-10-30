@@ -349,7 +349,9 @@ const Sound = (() => {
     bass(m, v = 1){ if (ok()) filtered('sawtooth', midi(m - 24), .32 * v, .32, 700); },
     pluck(m, v = 1){ if (ok()) filtered('square', midi(m + 12), .09 * v, .16, 3200); },
     pad(chord){ if (!ok()) return; for (const m of chord) filtered('triangle', midi(m), .025, 2.2, 1200); },
-    pop(){ if (ok()) osc('square', 600 + Math.random() * 300, .03, .05, 200); },
+    pop(c = 0){ if (ok()) osc('square', (600 + Math.random() * 120) * Math.pow(1.03, Math.min(c, 24)), .03, .05, 200); },   // climbs with the combo
+    streak(n){ if (!ok()) return; const base = 64 + Math.min(n, 6) * 2; [0, 4, 7, 12].forEach((st, k) => setTimeout(() => osc('triangle', midi(base + st), .1, .22), k * 55)); },
+    slow(){ if (ok()){ osc('sawtooth', 220, .12, .7, 70); hiss(.12, .6, 'lowpass', 900); } },
     gem(){ if (ok()) osc('sine', 1300 + Math.random() * 400, .03, .06); },
     hurt(){ if (ok()) osc('sawtooth', 120, .25, .2, 60); },
     level(){ if (!ok()) return; [0, 4, 7, 12].forEach((s, k) => setTimeout(() => osc('triangle', midi(69 + s), .12, .2), k * 70)); },
@@ -529,7 +531,8 @@ function newRun(daily = false){
   const P = { x: 0, y: 0, r: 13, hp: 0, inv: 0, fx: 1, fy: 0 };
   G = { daily, P, t: 0, kills: 0, level: 1, xp: 0, weapons: { snare: 1 }, passives: {}, enemies: [], shots: [], foes: [], rings: [], beams: [], gems: [], parts: [], texts: [],
         step: 0, stepAcc: 0, pulse: 0, shake: 0, flash: 0, spawnAcc: 0, nextBoss: 300, nextDrop: 60, bosses: 0, revived: false, freeReroll: true,
-        pendingLevels: 0, offer: null, orbAng: 0, orbFlash: 0, won: false, dead: false, vinylBonus: 0, dropBanner: 0, bannerText: '' };
+        pendingLevels: 0, offer: null, orbAng: 0, orbFlash: 0, won: false, dead: false, vinylBonus: 0, dropBanner: 0, bannerText: '',
+        waiting: false, hitStop: 0, slowMo: 0, nearDeathDone: false, combo: 0, comboT: 0, streak: 0, nextStreak: 50, tip: null, tipsShown: {} };
   P.hp = maxHp();
 }
 const lv = id => G.weapons[id] || 0;
@@ -576,9 +579,14 @@ function director(dt){
 function drop(){
   const n = Math.min(40, 14 + Math.floor(G.t / 15)), R = 330;
   for (let k = 0; k < n; k++){ const a = k / n * TAU; spawnEnemy(G.t > 150 && k % 3 === 0 ? 'glitch' : 'static', G.P.x + Math.cos(a) * R, G.P.y + Math.sin(a) * R); }
-  banner('THE DROP'); G.flash = .5; Sound.crash(1);
+  banner('THE DROP'); G.flash = .45; G.shake = Math.max(G.shake, 10); Sound.crash(1); buzz(60);
+  tip('drop', 'Every minute the Silence drops a ring. Keep moving!');
 }
 function banner(text){ G.bannerText = text; G.dropBanner = 2.2; }
+// a short buzz on phones for big moments (only after the player has touched the page)
+function buzz(ms){ if (save.muted) return; try { if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(ms); } catch(e){} }
+// first-run tips, each shown once, only to players who haven't finished a run yet
+function tip(id, text, life = 4.5){ if (!G || save.tutorialDone || G.tipsShown[id]) return; G.tipsShown[id] = true; G.tip = { text, life, max: life }; }
 
 /* ================= Combat ================= */
 let lastPop = 0;
@@ -596,10 +604,12 @@ function kill(e){
   const n = e.boss ? 40 : e.elite ? 18 : 6;
   for (let i = 0; i < n; i++){ const a = Math.random() * TAU, s = 60 + Math.random() * 220; G.parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: .35 + Math.random() * .35, c: e.color, s: 2 + Math.random() * 3 }); }
   dropGem(e.x, e.y, e.xp * (1 + G.t / 300));     // later enemies are worth more, so levels keep coming
-  if (e.boss){ G.shake = 18; G.flash = .7; G.vinylBonus += 15; G.P.hp = Math.min(maxHp(), G.P.hp + 40); G.pendingLevels += 1; banner('SILENCED'); Sound.crash(1.4); }
-  else if (e.elite){ G.vinylBonus += 3; G.P.hp = Math.min(maxHp(), G.P.hp + 20); }
+  if (e.boss){ G.shake = 22; G.flash = .6; G.hitStop = .16; G.vinylBonus += 15; G.P.hp = Math.min(maxHp(), G.P.hp + 40); G.pendingLevels += 1; banner('SILENCED'); Sound.crash(1.4); buzz(120); }
+  else if (e.elite){ G.vinylBonus += 3; G.P.hp = Math.min(maxHp(), G.P.hp + 20); G.shake = Math.max(G.shake, 8); G.hitStop = Math.max(G.hitStop, .06); buzz(30); }
   else if (Math.random() < .012) G.gems.push({ x: e.x, y: e.y, v: 0, heal: 20 });
-  const now = performance.now(); if (now - lastPop > 45){ lastPop = now; Sound.pop(); }
+  G.combo++; G.comboT = 1.2; G.streak++;
+  if (G.streak >= G.nextStreak){ banner(`${G.nextStreak} STREAK!`); Sound.streak(Math.log2(G.nextStreak / 50)); G.nextStreak *= 2; buzz(40); }
+  const now = performance.now(); if (now - lastPop > 45){ lastPop = now; Sound.pop(G.combo); }
 }
 function dropGem(x, y, v){
   if (G.gems.length >= MAX_GEMS){ let best = G.gems[0], bd = 1e18; for (const g of G.gems){ if (g.heal) continue; const d = (g.x - x) ** 2 + (g.y - y) ** 2; if (d < bd){ bd = d; best = g; } } best.v += v; return; }
@@ -679,6 +689,14 @@ function fireBeam(x, y, a, len, dmg, c){
 let input = { x: 0, y: 0 }, keys = {}, joy = null, botInput = null;
 function update(dt){
   const P = G.P;
+  // hit-stop: the world freezes for a few frames; the music clock keeps counting so the beat never slips
+  if (G.hitStop > 0){ G.hitStop = Math.max(0, G.hitStop - dt); G.stepAcc += dt; G.shake *= Math.pow(.02, dt); return; }
+  // near death: a moment of slow motion (the music slows down with it, like a record dragging)
+  if (G.slowMo > 0){ G.slowMo = Math.max(0, G.slowMo - dt); dt *= .4; }
+  G.comboT -= dt; if (G.comboT <= 0) G.combo = 0;
+  if (G.tip){ G.tip.life -= dt; if (G.tip.life <= 0) G.tip = null; }
+  if (G.t > 1 && G.t < 2) tip('beat', 'Your weapons fire on the beat. Just move!');
+  if (G.gems.length && G.level === 1 && G.t > 6) tip('gems', 'Grab the glowing gems to level up');
   G.t += dt;
 
   // music clock
@@ -794,7 +812,9 @@ function update(dt){
     }
   }
   G.gems = G.gems.filter(g => !g.got);
-  while (G.xp >= xpNeed(G.level)){ G.xp -= xpNeed(G.level); G.level++; G.pendingLevels++; }
+  while (G.xp >= xpNeed(G.level)){ G.xp -= xpNeed(G.level); G.level++; G.pendingLevels++;
+    // a punch before the level-up screen: freeze, a white ring, a buzz
+    G.hitStop = Math.max(G.hitStop, .1); G.rings.push({ x: P.x, y: P.y, r: 14, max: 150, dmg: 0, knock: 0, c: '#3df2ff', life: .8, hitSet: new Set(), follow: true }); buzz(25); }
 
   // fx
   for (const p of G.parts){ p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .9; p.vy *= .9; p.life -= dt; }
@@ -806,14 +826,15 @@ function update(dt){
   G.enemies = G.enemies.filter(e => !e.dead);
 
   if (!G.won && G.t >= TRACK_LEN){ G.won = true; onWin(); return; }
-  if (G.pendingLevels > 0 && screen === 'play' && !G.dead) openLevelUp();
+  if (G.pendingLevels > 0 && screen === 'play' && !G.dead && G.hitStop <= 0) openLevelUp();
 }
 function hurt(d, src = '?'){
   const P = G.P; P.hp -= d; G.hurtLog = G.hurtLog || {}; G.hurtLog[src] = (G.hurtLog[src] || 0) + d; P.inv = .6;
   // a defensive thump: shove whatever is touching you, so you can't be pinned and drained
   query(P.x, P.y, 90, e => { const dx = e.x - P.x, dy = e.y - P.y, dd = Math.hypot(dx, dy) || 1; if (dd < 90){ const k = e.boss ? 120 : 300; e.kx += dx / dd * k; e.ky += dy / dd * k; } });
-  G.rings.push({ x: P.x, y: P.y, r: 10, max: 90, dmg: 0, knock: 0, c: '#ff3d71', life: .6, hitSet: new Set(), follow: true }); G.shake = Math.max(G.shake, 7); Sound.hurt();
-  try { if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(40); } catch(e){}
+  G.rings.push({ x: P.x, y: P.y, r: 10, max: 90, dmg: 0, knock: 0, c: '#ff3d71', life: .6, hitSet: new Set(), follow: true }); G.shake = Math.max(G.shake, Math.min(16, 4 + d * .5)); Sound.hurt();
+  buzz(40); G.streak = 0; G.nextStreak = 50;
+  if (P.hp > 0 && P.hp / maxHp() < .2 && !G.nearDeathDone){ G.nearDeathDone = true; G.slowMo = .9; Sound.slow(); buzz(120); tip('low', 'Low health! Pink hearts heal you'); }
   if (P.hp <= 0){ P.hp = 0; G.dead = true; onDeath(); }
 }
 
@@ -947,10 +968,33 @@ function draw(){
   if (G.dropBanner > 0){
     ctx.globalAlpha = Math.min(1, G.dropBanner); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.font = `900 ${Math.round(Math.min(VW / 9, 54))}px ui-rounded,system-ui,sans-serif`;
-    { const fs = Math.round(Math.min(VW / 9, 54)); ctx.font = `italic 900 ${fs}px ${FONT}`; const bwid = ctx.measureText(G.bannerText).width; if (bwid > VW * .92) ctx.font = `italic 900 ${Math.floor(fs * VW * .92 / bwid)}px ${FONT}`; }
+    { const pop = 1 + Math.max(0, G.dropBanner - 1.95) * 1.6; const fs = Math.round(Math.min(VW / 9, 54) * pop); ctx.font = `italic 900 ${fs}px ${FONT}`; const bwid = ctx.measureText(G.bannerText).width; if (bwid > VW * .92) ctx.font = `italic 900 ${Math.floor(fs * VW * .92 / bwid)}px ${FONT}`; }
     const bg2 = ctx.createLinearGradient(VW * .2, 0, VW * .8, 0); bg2.addColorStop(0, '#3df2ff'); bg2.addColorStop(.5, '#a46bff'); bg2.addColorStop(1, '#ff3df2');
     ctx.shadowColor = 'rgba(255,61,242,.8)'; ctx.shadowBlur = 18; ctx.fillStyle = bg2; ctx.fillText(G.bannerText, VW / 2, VH * .3); ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
+  }
+  // waiting for the first touch: a pulsing hint under the player
+  if (G.waiting){
+    const t = performance.now() / 1000, a = .6 + Math.sin(t * 4) * .4, cy = VH / 2;
+    ctx.strokeStyle = `rgba(61,242,255,${.25 + a * .35})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(VW / 2, cy, 34 + Math.sin(t * 4) * 6, 0, TAU); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; const hint = 'Drag or use WASD to move'; let hs = Math.round(Math.min(26, VW / 13)); ctx.font = `900 ${hs}px ${FONT}`; const hw = ctx.measureText(hint).width; if (hw > VW * .9){ hs = Math.floor(hs * VW * .9 / hw); ctx.font = `900 ${hs}px ${FONT}`; }
+    ctx.globalAlpha = .55 + a * .45; ctx.shadowColor = 'rgba(61,242,255,.8)'; ctx.shadowBlur = 14; ctx.fillStyle = '#fff';
+    ctx.fillText(hint, VW / 2, cy + 76);
+    ctx.shadowBlur = 0; ctx.font = `700 ${Math.round(Math.min(16, VW / 24))}px ${FONT}`; ctx.fillStyle = '#d8d2ff';
+    ctx.fillText('The music starts when you move', VW / 2, cy + 108); ctx.globalAlpha = 1;
+  }
+  if (G.tip){
+    const k = Math.min(1, G.tip.life * 2, (G.tip.max - G.tip.life) * 4);
+    ctx.globalAlpha = k; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `800 ${Math.round(Math.min(18, VW / 22))}px ${FONT}`;
+    { const tw = ctx.measureText(G.tip.text).width; if (tw > VW * .84) ctx.font = `800 ${Math.floor(Math.min(18, VW / 22) * VW * .84 / tw)}px ${FONT}`; }   // fits a phone
+    const w = ctx.measureText(G.tip.text).width + 36, y = VH * .78;
+    rr(VW / 2 - w / 2, y - 20, w, 40, 20); ctx.fillStyle = 'rgba(10,8,30,.75)'; ctx.fill(); ctx.strokeStyle = 'rgba(61,242,255,.7)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.fillText(G.tip.text, VW / 2, y + 1); ctx.globalAlpha = 1;
+  }
+  if (G.combo >= 10){
+    const k = Math.min(1, G.comboT * 2); ctx.globalAlpha = k; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.font = `italic 900 ${Math.round(18 + Math.min(G.combo, 60) * .25)}px ${FONT}`; ctx.fillStyle = G.combo >= 40 ? '#ff3df2' : G.combo >= 20 ? '#ffe14d' : '#3df2ff';
+    ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12; ctx.fillText(`${G.combo} COMBO`, VW - 16, 86); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
   }
   if (joy && joy.active){
     ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(joy.ox, joy.oy, 50, 0, TAU); ctx.stroke();
@@ -980,6 +1024,7 @@ function buildOffer(){
 }
 function openLevelUp(){
   screen = 'lvl'; G.offer = buildOffer(); renderOffer(); show('lvl'); Sound.level();
+  $('lvlSub').textContent = save.tutorialDone ? 'Pick one' : 'Pick one: every weapon joins the band';
 }
 function renderOffer(){
   $('lvlTitle').textContent = G.pendingLevels > 1 ? `LEVEL UP ×${G.pendingLevels}` : 'LEVEL UP';
@@ -1009,6 +1054,7 @@ async function reroll(){
 /* ================= Run end ================= */
 function vinylFor(){ return Math.floor(G.kills / 25) + Math.floor(G.t / 20) + G.vinylBonus + (G.won ? 50 : 0); }
 function onDeath(){
+  if (!save.tutorialDone){ save.tutorialDone = true; persist(); }
   Portal.gameplayStop();
   setTimeout(() => { if (G && G.dead) showOver(); }, 700);
 }
@@ -1066,8 +1112,16 @@ function renderStudio(){
   }).join('');
 }
 let studioFrom = 'menu';
-function startRun(daily = false){
-  Sound.init(); newRun(daily); screen = 'play'; paused = false; show(null); last = performance.now(); Portal.gameplayStart();
+function startRun(daily = false, wait = false){
+  // wait: the run is on screen but frozen until the first move (used when the page opens straight into play)
+  if (!wait) Sound.init();
+  newRun(daily); G.waiting = wait; screen = 'play'; paused = false; show(null); last = performance.now();
+  if (!wait) Portal.gameplayStart();
+}
+// the first key, drag or click of a waiting run: music on, clock running
+function firstMove(){
+  if (!G || !G.waiting) return;
+  G.waiting = false; Sound.init(); last = performance.now(); Portal.gameplayStart();
 }
 async function playAgain(){
   runsSinceAd++; if (runsSinceAd >= 3){ runsSinceAd = 0; await Portal.interstitial(); }
@@ -1075,17 +1129,18 @@ async function playAgain(){
 }
 function toMenu(){ G = null; screen = 'menu'; paused = false; refreshMenu(); show('menu'); Portal.gameplayStop(); }
 function pause(){ if (screen !== 'play' || !G || G.dead) return; paused = true; screen = 'paused'; show('paused'); Portal.gameplayStop(); }
-function resume(){ paused = false; screen = 'play'; show(null); last = performance.now(); Portal.gameplayStart(); }
+function resume(){ paused = false; screen = 'play'; show(null); last = performance.now(); if (!G || !G.waiting) Portal.gameplayStart(); }
 
 /* ================= Input ================= */
 addEventListener('keydown', e => {
   keys[e.code] = true;
+  if (screen === 'play' && /^(Arrow|Key[WASD]$)/.test(e.code)) firstMove();
   if (e.code === 'Escape' || e.code === 'KeyP'){ screen === 'paused' ? resume() : pause(); }
   if (screen === 'lvl' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) choose(+e.code.slice(-1) - 1);
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { keys = {}; });
-cvs.addEventListener('pointerdown', e => { if (screen !== 'play') return; joy = { active: true, id: e.pointerId, ox: e.clientX, oy: e.clientY, dx: 0, dy: 0 }; cvs.setPointerCapture(e.pointerId); });
+cvs.addEventListener('pointerdown', e => { if (screen !== 'play') return; firstMove(); joy = { active: true, id: e.pointerId, ox: e.clientX, oy: e.clientY, dx: 0, dy: 0 }; cvs.setPointerCapture(e.pointerId); });
 cvs.addEventListener('pointermove', e => {
   if (!joy || !joy.active || e.pointerId !== joy.id) return;
   let dx = (e.clientX - joy.ox) / 50, dy = (e.clientY - joy.oy) / 50; const m = Math.hypot(dx, dy);
@@ -1129,7 +1184,7 @@ function frame(t){
   try {
     // frame-rate guard: if frames average over ~22 ms for a few seconds of play, render at 1x pixels
     if (!lowRes && G && screen === 'play' && raw < .5){ slowAvg = slowAvg * .97 + raw * .03; if (slowAvg > .022 && G.t > 5){ lowRes = true; resize(); } }
-    if (G && screen === 'play' && !paused && !G.dead) update(dt);
+    if (G && screen === 'play' && !paused && !G.dead && !G.waiting) update(dt);
     else if (G && G.dead){ for (const p of G.parts){ p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; } }
     draw();
   } catch(err){
@@ -1138,6 +1193,7 @@ function frame(t){
   }
 }
 refreshMenu();
+if (!/[?&](debug|cover|menu)\b/.test(location.search)) startRun(false, true);
 requestAnimationFrame(frame);
 
 if (/[?&]debug\b/.test(location.search)) window.__bl = {
