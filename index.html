@@ -287,6 +287,24 @@ const Portal = (() => {
     document.head.appendChild(s);
   });
 
+  // Saved progress. On CrazyGames it must go through their Data Module: it syncs to the player's
+  // account across devices, and their docs require games to rely on it there instead of local saves.
+  // Everywhere else it is plain localStorage. Neither function ever throws.
+  function localGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function localSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+  // resolves with the stored string (or null); on the portal it waits for the SDK to finish loading the player's data
+  function loadSave(key){
+    if (!onPortal) return Promise.resolve(localGet(key));
+    return ready.then(() => {
+      if (sdk && sdk.data){ try { return sdk.data.getItem(key); } catch(e){} }
+      return localGet(key);                 // SDK blocked (ad blocker): keep progress on this device
+    });
+  }
+  function writeSave(key, value){
+    if (sdk && sdk.data){ try { sdk.data.setItem(key, value); return; } catch(e){} }
+    localSet(key, value);
+  }
+
   function placeholder(){
     return new Promise(res => {
       adPlaying = true; applyAudio();
@@ -323,6 +341,7 @@ const Portal = (() => {
     interstitial: () => requestAd('midgame'),
     gameplayStart, gameplayStop,
     happytime(){ if (sdk) try { sdk.game.happytime(); } catch(e){} },
+    loadSave, writeSave,
   };
 })();
 
@@ -342,10 +361,17 @@ let rng = Math.random, rngOffer = Math.random, rngFx = Math.random;
 
 /* ================= Save ================= */
 const SAVE_KEY = 'bassline.v1';
-const save = Object.assign({ vinyl: 0, meta: {}, best: 0, bestKills: 0, muted: false, runs: 0, daily: {}, track: 'synth', tracks: ['synth'], mis: null, login: null },
-  (() => { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch(e){ return {}; } })());
+const save = { vinyl: 0, meta: {}, best: 0, bestKills: 0, muted: false, runs: 0, daily: {}, track: 'synth', tracks: ['synth'], mis: null, login: null };
+// On CrazyGames progress lives in their Data Module, which is only readable once the SDK has loaded,
+// so there the save starts as defaults and nothing is written until the player's data has arrived (see boot()).
+let saveReady = !Portal.onPortal;
+function applySave(str){
+  let o = {}; try { o = JSON.parse(str) || {}; } catch(e){}
+  if (o && typeof o === 'object' && !Array.isArray(o)) Object.assign(save, o);
+  repairSave();
+}
 // repair anything malformed, field by field, so a bad save can never stop the game
-(() => { const num = (k, d = 0) => { if (typeof save[k] !== 'number' || !Number.isFinite(save[k]) || save[k] < 0) save[k] = d; };
+function repairSave(){ const num = (k, d = 0) => { if (typeof save[k] !== 'number' || !Number.isFinite(save[k]) || save[k] < 0) save[k] = d; };
   num('vinyl'); num('best'); num('bestKills'); num('runs');
   const obj = k => { if (!save[k] || typeof save[k] !== 'object' || Array.isArray(save[k])) save[k] = {}; };
   obj('meta'); obj('daily'); for (const k in save.meta) if (typeof save.meta[k] !== 'number' || !(save.meta[k] >= 0)) delete save.meta[k];
@@ -353,8 +379,9 @@ const save = Object.assign({ vinyl: 0, meta: {}, best: 0, bestKills: 0, muted: f
   if (typeof save.track !== 'string') save.track = 'synth'; save.muted = !!save.muted;
   if (save.mis && (typeof save.mis !== 'object' || !Array.isArray(save.mis.ids) || typeof save.mis.prog !== 'object' || typeof save.mis.done !== 'object' || !save.mis.prog || !save.mis.done)) save.mis = null;
   if (save.login && (typeof save.login !== 'object' || typeof save.login.last !== 'string' || typeof save.login.n !== 'number')) save.login = null;
-})();
-function persist(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch(e){} }
+}
+if (saveReady){ let str = null; try { str = localStorage.getItem(SAVE_KEY); } catch(e){} applySave(str); }
+function persist(){ if (saveReady) Portal.writeSave(SAVE_KEY, JSON.stringify(save)); }
 const meta = id => save.meta[id] || 0;
 
 /* ================= Sound: a tiny synth band ================= */
@@ -1394,9 +1421,17 @@ function frame(t){
     if (!loggedErr){ loggedErr = true; console.error('Bassline frame error', err); }
   }
 }
-ensureMissions(); if (!COVER) checkLogin(); persist();
-refreshMenu();
-if (!/[?&](debug|cover|menu)\b/.test(location.search)) startRun(false, true);
+function boot(){
+  ensureMissions(); if (!COVER) checkLogin(); persist();
+  refreshMenu();
+  if (!/[?&](debug|cover|menu)\b/.test(location.search)) startRun(false, true); else show('menu');
+}
+if (saveReady) boot();
+else {
+  // on CrazyGames: keep the menu hidden (no clicks on a half-loaded save) until the player's data is in
+  $('menu').classList.remove('on');
+  Portal.loadSave(SAVE_KEY).then(str => { applySave(str); saveReady = true; boot(); });
+}
 requestAnimationFrame(frame);
 
 if (/[?&]debug\b/.test(location.search)) window.__bl = {
