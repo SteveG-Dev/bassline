@@ -1342,7 +1342,9 @@ function startRun(daily = false, wait = false){
   if (!wait) Sound.init();
   newRun(daily);
   if (daily) mis('daily', 1, true); G.waiting = wait; screen = 'play'; paused = false; show(null); last = performance.now();
-  if (!wait) Portal.gameplayStart();
+  // report gameplay as soon as the run is on screen, even while it waits for the first move:
+  // CrazyGames measures load time up to this call, so waiting for the player would count their hesitation as loading
+  Portal.gameplayStart();
 }
 // the first key, drag or click of a waiting run: music on, clock running
 function firstMove(){
@@ -1355,7 +1357,7 @@ async function playAgain(){
 }
 function toMenu(){ G = null; screen = 'menu'; paused = false; refreshMenu(); show('menu'); Portal.gameplayStop(); }
 function pause(){ if (screen !== 'play' || !G || G.dead) return; persist(); paused = true; screen = 'paused'; show('paused'); Portal.gameplayStop(); }
-function resume(){ paused = false; screen = 'play'; show(null); last = performance.now(); if (!G || !G.waiting) Portal.gameplayStart(); }
+function resume(){ paused = false; screen = 'play'; show(null); last = performance.now(); Portal.gameplayStart(); }
 
 /* ================= Input ================= */
 addEventListener('keydown', e => {
