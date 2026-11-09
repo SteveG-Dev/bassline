@@ -1,0 +1,1522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex"><!-- 3D test build -->
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Bassline</title>
+<meta name="description" content="The Silence is coming. Your weapons are the music. Survive the track.">
+<meta name="theme-color" content="#07060f">
+<meta property="og:title" content="Bassline">
+<meta property="og:description" content="The Silence is coming. Your weapons are the music. Survive the track.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://steveg-dev.github.io/bassline/covers/cover-1920x1080.png">
+<meta name="twitter:image" content="https://steveg-dev.github.io/bassline/covers/cover-1920x1080.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307060f'/%3E%3Ccircle cx='32' cy='32' r='9' fill='%233df2ff'/%3E%3Ccircle cx='32' cy='32' r='17' fill='none' stroke='%23ff3df2' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='25' fill='none' stroke='%233df2ff' stroke-width='2' opacity='.5'/%3E%3C/svg%3E">
+<style>
+  :root{ --bg:#07051a; --text:#f4f1ff; --muted:#b9b2dc;
+         --cyan:#3df2ff; --pink:#ff3df2; --yellow:#ffe14d; --green:#4dff8a; --red:#ff3d71; --violet:#a46bff; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden;
+    font-family:ui-rounded,"SF Pro Rounded","Nunito","Segoe UI Variable Display",system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none}
+  canvas{display:block;position:fixed;inset:0}
+  #gl{width:100vw;height:100vh}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  svg{display:block}
+  #sprite{position:absolute;width:0;height:0;overflow:hidden}
+
+  .screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(5,3,16,.4);z-index:3;overflow-y:auto}
+  .screen.on{display:flex}
+  #menu{background:none}
+  #paused,#lvl,#win{background:rgba(5,3,16,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .card{position:relative;width:100%;max-width:400px;margin:auto;border-radius:26px;padding:24px 22px 18px;text-align:center;
+    background:linear-gradient(180deg,rgba(28,22,62,.82),rgba(12,9,32,.92));border:1px solid rgba(160,140,255,.25);
+    box-shadow:0 0 0 1px rgba(255,255,255,.04),0 0 40px rgba(120,80,255,.18),inset 0 1px 0 rgba(255,255,255,.08),0 28px 80px rgba(0,0,0,.6);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  #menu .card{background:linear-gradient(180deg,rgba(18,14,44,.55),rgba(10,8,28,.75))}
+
+  /* neon slanted logo with a sound wave under it */
+  .logo{display:inline-block;transform:skew(-10deg) rotate(-4deg);margin:6px 0 2px}
+  .logo b{display:block;font-weight:900;font-style:italic;letter-spacing:1px;line-height:1;font-size:clamp(50px,15vw,70px);
+    background:linear-gradient(90deg,#3df2ff,#7da2ff 45%,#ff3df2);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 10px rgba(61,242,255,.55)) drop-shadow(0 0 22px rgba(255,61,242,.35))}
+  .logo svg{width:84%;height:22px;margin:2px 0 0 14%}
+  .tag{color:#e7e2ff;margin:12px 0 18px;line-height:1.45;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
+  h2{font-size:34px;font-weight:900;line-height:1.1}
+  .neon{font-style:italic;background:linear-gradient(90deg,#3df2ff,#a46bff 55%,#ff3df2);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(61,242,255,.45))}
+
+  .btn{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px 16px;border-radius:16px;margin-top:11px;font-weight:900;font-size:18px;color:#fff;
+    background:linear-gradient(180deg,rgba(34,28,74,.85),rgba(16,12,40,.92));border:1.5px solid rgba(200,190,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 6px 18px rgba(0,0,0,.35);transition:transform .08s,filter .15s}
+  .btn:hover{filter:brightness(1.12)}
+  .btn:active{transform:scale(.97)}
+  .btn svg{width:24px;height:24px;flex:none}
+  .btn .tx{display:block;line-height:1.15}
+  .btn small{display:block;font-size:12.5px;font-weight:700;opacity:.8}
+  .btn.list{justify-content:flex-start;gap:16px;padding:12px 18px;text-align:left}
+  .btn.list .tx{flex:1;text-align:center;margin-right:40px}
+  .btn.primary{color:#0b0626;font-size:22px;padding:16px;border:0;
+    background:linear-gradient(90deg,#3df2ff,#8a8bff 50%,#ff3df2);box-shadow:inset 0 2px 0 rgba(255,255,255,.45),0 0 24px rgba(160,100,255,.5),0 8px 22px rgba(0,0,0,.4)}
+  .btn.ad{color:#03240f;border:0;background:linear-gradient(90deg,#4dff8a,#3df2c8);box-shadow:inset 0 2px 0 rgba(255,255,255,.45),0 0 20px rgba(77,255,138,.4),0 8px 20px rgba(0,0,0,.4)}
+  .btn.ad small{color:#0b4a2a}
+  .btn:disabled{opacity:.45}
+  .row{display:flex;gap:12px}.row .btn{flex:1;min-width:0}
+
+  .stats{display:flex;justify-content:center;margin-top:18px;color:#c9c2ef;font-size:14px;font-weight:600}
+  .stats>div{flex:1}
+  .stats b{display:block;color:#fff;font-size:26px;font-weight:900}
+  .stats .ic{width:28px;height:28px;margin:0 auto 4px}
+  .big{font-size:76px;font-weight:900;margin:2px 0;line-height:1;text-shadow:0 0 18px rgba(160,140,255,.5)}
+  .sub{color:#e0daff;font-weight:600;font-size:16px}
+  .best{color:#fff;font-weight:700;font-size:17px}
+  .link{margin:10px auto 0;color:#c9c2ef;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+  .link svg{width:18px;height:18px}
+  .topart{position:absolute;left:50%;top:-58px;transform:translateX(-50%);width:120px;height:120px;pointer-events:none}
+  .topart.wide{width:min(320px,90%);height:80px;top:-52px}
+  #over .card,#win .card{margin-top:64px;padding-top:58px}
+
+  /* level up */
+  #lvl .card{max-width:450px}
+  .choices{display:grid;gap:10px;margin-top:14px}
+  .choice{display:flex;align-items:center;gap:14px;text-align:left;padding:12px 14px;border-radius:16px;
+    background:linear-gradient(180deg,rgba(34,28,74,.75),rgba(14,11,36,.9));border:1.5px solid rgba(200,190,255,.2);transition:transform .08s,border-color .15s}
+  .choice:active{transform:scale(.98)}
+  .choice:hover{border-color:var(--cyan);box-shadow:0 0 16px rgba(61,242,255,.3)}
+  .choice .ic{font-size:30px;width:50px;height:50px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:14px;background:rgba(5,4,18,.7);border:1px solid rgba(255,255,255,.08)}
+  .choice b{display:block;font-size:17px}
+  .choice small{color:#c9c2ef;font-size:13px;line-height:1.3;display:block;margin-top:2px}
+  .choice .new{display:block;color:var(--yellow);font-size:11px;font-weight:900;letter-spacing:.8px;text-shadow:0 0 8px rgba(255,225,77,.6)}
+  .choice .lv{display:block;color:var(--cyan);font-size:12px;font-weight:800}
+
+  /* studio */
+  .shop{display:grid;gap:9px;margin-top:14px;text-align:left}
+  .item{display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:14px;background:linear-gradient(180deg,rgba(34,28,74,.7),rgba(14,11,36,.88));border:1px solid rgba(200,190,255,.18)}
+  .item .ic{width:34px;height:34px;flex:none}
+  .item .t{flex:1;min-width:0}.item .t b{display:block;font-size:16px;font-weight:900}.item .t b span{font-size:12px;color:#c9c2ef}.item .t small{color:#c9c2ef;font-size:13px}
+  .item button{display:inline-flex;align-items:center;gap:6px;min-width:76px;justify-content:center;padding:8px 12px;border-radius:12px;font-weight:900;font-size:17px;color:#fff;background:rgba(5,4,18,.6);border:1px solid rgba(200,190,255,.3)}
+  .item button svg{width:18px;height:18px}
+  .item button:disabled{opacity:.6}
+  .have{display:inline-flex;align-items:center;gap:5px}
+  .have svg{width:16px;height:16px}
+
+  #ad{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:#000;z-index:9;text-align:center;padding:16px}
+  #ad.on{display:flex}#ad .t{font-size:13px;color:#888}#ad .n{font-size:40px;font-weight:900}
+  #toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#fff;color:#111;padding:10px 16px;border-radius:12px;font-weight:800;opacity:0;transition:opacity .25s;pointer-events:none;z-index:8;white-space:nowrap}
+  #pauseBtn{position:fixed;right:12px;top:calc(14px + env(safe-area-inset-top));width:46px;height:46px;border-radius:14px;background:rgba(10,8,30,.7);border:1.5px solid rgba(61,242,255,.75);color:#fff;display:none;z-index:2;place-items:center;box-shadow:0 0 14px rgba(61,242,255,.45)}
+  #pauseBtn svg{width:20px;height:20px}
+  /* menu: main card + missions card side by side on wide screens, stacked on phones */
+  .mwrap{display:flex;gap:18px;align-items:center;justify-content:center;margin:auto;width:100%;max-width:840px}
+  .mwrap>.card{margin:0;flex:1 1 380px}
+  @media (max-width:820px){ .mwrap{flex-direction:column;align-items:stretch;max-width:420px} }
+  .tracks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+  .trk{padding:8px 4px 7px;border-radius:13px;background:rgba(5,4,18,.55);border:1.5px solid rgba(200,190,255,.2);font-size:12px;line-height:1.2;color:#c9c2ef;transition:transform .08s}
+  .trk:active{transform:scale(.96)}
+  .trk b{display:block;font-size:14px;color:#fff;font-weight:900}
+  .trk.on{border-color:var(--tc);box-shadow:0 0 14px var(--tc),inset 0 0 12px rgba(255,255,255,.06)}
+  .trk.on b{color:var(--tc)}
+  .trk.lock{opacity:.7}
+  .trk.lock small{color:#ffe14d}
+  .klabel{margin-top:14px;font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#b9b2dc}
+  .side{text-align:left}
+  .side h3{font-size:24px;font-weight:900;text-align:center}
+  .mreset{text-align:center;color:#b9b2dc;font-size:13px;font-weight:600;margin:2px 0 10px}
+  .mrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;margin-top:8px;background:linear-gradient(180deg,rgba(34,28,74,.7),rgba(14,11,36,.88));border:1px solid rgba(200,190,255,.18)}
+  .mrow.done{border-color:rgba(77,255,138,.55);box-shadow:0 0 12px rgba(77,255,138,.18)}
+  .mchk{width:30px;height:30px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:11px;color:#fff;background:conic-gradient(var(--c,#3df2ff) calc(var(--p)*1%),rgba(255,255,255,.12) 0)}
+  .mchk span{width:22px;height:22px;border-radius:50%;background:#140f30;display:grid;place-items:center}
+  .mrow.done .mchk{background:#4dff8a;color:#03240f;font-size:16px}
+  .mt{flex:1;min-width:0}.mt b{display:block;font-size:14.5px;font-weight:800;color:#fff}.mt small{color:#b9b2dc;font-size:12px;font-weight:700}
+  .mbar{height:5px;border-radius:3px;background:rgba(255,255,255,.12);margin-top:5px;overflow:hidden}.mbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#3df2ff,#a46bff)}
+  .mrow.done .mbar i{background:#4dff8a}
+  .mpay{display:inline-flex;align-items:center;gap:4px;font-weight:900;font-size:15px;color:#ffe14d}.mpay svg{width:16px;height:16px}
+  .streak{margin-top:12px;padding:10px 12px;border-radius:14px;background:rgba(5,4,18,.5);border:1px solid rgba(255,138,61,.35);display:flex;align-items:center;gap:12px}
+  .streak .fl{font-size:24px}
+  .streak b{font-size:15px;color:#fff;font-weight:900}.streak small{display:block;color:#b9b2dc;font-size:12px;font-weight:700}
+  .sdots{display:flex;gap:4px;margin-top:5px}.sdots i{width:14px;height:6px;border-radius:3px;background:rgba(255,255,255,.14)}.sdots i.on{background:linear-gradient(90deg,#ffb84d,#ff3df2)}
+  .mmini{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;justify-content:center}
+  .mmini span{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800;background:rgba(5,4,18,.6);border:1px solid rgba(200,190,255,.22);color:#d8d2ff}
+  .mmini span.done{border-color:#4dff8a;color:#4dff8a}
+  .mmini span.new{background:rgba(77,255,138,.16)}
+  @media (max-height:760px){ .card{padding:18px 18px 14px} .tag{margin:8px 0 10px} .btn{margin-top:8px;padding:11px 14px} .btn.primary{padding:12px} .big{font-size:60px} .stats{margin-top:12px} #over .card,#win .card{padding-top:50px} }
+</style>
+</head>
+<body>
+<!-- icon set: each icon is drawn once here and reused with <use> -->
+<svg id="sprite" aria-hidden="true">
+  <defs>
+    <linearGradient id="g-neon" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3df2ff"/><stop offset=".5" stop-color="#a46bff"/><stop offset="1" stop-color="#ff3df2"/></linearGradient>
+    <radialGradient id="g-label" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="#ff7af5"/><stop offset="1" stop-color="#c21ccf"/></radialGradient>
+    <radialGradient id="g-labelc" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="#7af6ff"/><stop offset="1" stop-color="#119bb8"/></radialGradient>
+    <linearGradient id="g-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset=".55" stop-color="#ffc93c"/><stop offset="1" stop-color="#f29a12"/></linearGradient>
+  </defs>
+  <symbol id="i-vinyl" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#0d0b18"/><g fill="none" stroke="#2a2640" stroke-width="1.2"><circle cx="50" cy="50" r="42"/><circle cx="50" cy="50" r="36"/><circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="24"/></g><path d="M20 30a40 40 0 0 1 22-15" stroke="#fff" stroke-opacity=".25" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="50" cy="50" r="17" fill="url(#g-label)"/><circle cx="50" cy="50" r="4" fill="#0d0b18"/></symbol>
+  <symbol id="i-vinylc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#0d0b18"/><g fill="none" stroke="#2a2640" stroke-width="1.2"><circle cx="50" cy="50" r="42"/><circle cx="50" cy="50" r="36"/><circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="24"/></g><path d="M20 30a40 40 0 0 1 22-15" stroke="#fff" stroke-opacity=".25" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="50" cy="50" r="17" fill="url(#g-labelc)"/><circle cx="50" cy="50" r="4" fill="#0d0b18"/></symbol>
+  <symbol id="i-disc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e8e2ff"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#a49cc8" stroke-width="1"/><circle cx="12" cy="12" r="3.2" fill="#b06bff"/><circle cx="12" cy="12" r="1.2" fill="#fff"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.2c0-.8.9-1.3 1.6-.9l11.3 7.8c.6.4.6 1.4 0 1.8L8.6 20.7c-.7.4-1.6-.1-1.6-.9z" fill="currentColor"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor"/></symbol>
+  <symbol id="i-again" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="M19.8 3.5v4.8H15" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-bars" viewBox="0 0 24 24"><g fill="currentColor"><rect x="3" y="11" width="3.6" height="10" rx="1"/><rect x="8.2" y="5" width="3.6" height="16" rx="1"/><rect x="13.4" y="8" width="3.6" height="13" rx="1"/><rect x="18.6" y="14" width="3" height="7" rx="1"/></g></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6.2L4.6 18.4A1.8 1.8 0 0 0 6.2 21h11.6a1.8 1.8 0 0 0 1.6-2.6L14 9.2V3" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.3 15h9.4l2 3.6c.2.4 0 .9-.5.9H5.8c-.5 0-.7-.5-.5-.9z" fill="currentColor"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="4.5" cy="6" r="1.8"/><circle cx="4.5" cy="12" r="1.8"/><circle cx="4.5" cy="18" r="1.8"/><rect x="8.5" y="4.7" width="12.5" height="2.6" rx="1.3"/><rect x="8.5" y="10.7" width="12.5" height="2.6" rx="1.3"/><rect x="8.5" y="16.7" width="12.5" height="2.6" rx="1.3"/></g></symbol>
+  <symbol id="i-skull" viewBox="0 0 24 24"><path d="M12 2.5c-5 0-8.5 3.4-8.5 8 0 2.6 1.2 4.4 3 5.5V19a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5v-3c1.8-1.1 3-2.9 3-5.5 0-4.6-3.5-8-8.5-8z" fill="#f4f1ff"/><circle cx="8.6" cy="11" r="2.2" fill="#07051a"/><circle cx="15.4" cy="11" r="2.2" fill="#07051a"/><path d="M10 17.5v2M12 17.5v2M14 17.5v2" stroke="#07051a" stroke-width="1.3"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="18" cy="5.5" r="3.2"/><circle cx="6" cy="12" r="3.2"/><circle cx="18" cy="18.5" r="3.2"/></g><path d="M8.8 10.6l6.4-3.6M8.8 13.4l6.4 3.6" stroke="currentColor" stroke-width="2.2"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 12H5M11 5.5L4.5 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="M3.5 9h3.8L12 5v14l-4.7-4H3.5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.3 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path d="M3.5 9h3.8L12 5v14l-4.7-4H3.5z" fill="currentColor"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-move" viewBox="0 0 24 24"><g fill="currentColor"><rect x="9.2" y="2" width="5.6" height="5.6" rx="1.4"/><rect x="9.2" y="16.4" width="5.6" height="5.6" rx="1.4"/><rect x="2" y="9.2" width="5.6" height="5.6" rx="1.4"/><rect x="16.4" y="9.2" width="5.6" height="5.6" rx="1.4"/></g></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="5.5" y="4.5" width="4.5" height="15" rx="1.4" fill="currentColor"/><rect x="14" y="4.5" width="4.5" height="15" rx="1.4" fill="currentColor"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.5 2L4 13.5h6.5L9.5 22 20 9.5h-6.5z" fill="currentColor"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#f4f1ff" stroke-width="2.2"/><path d="M12 7v5l3.5 2" stroke="#3df2ff" stroke-width="2.2" stroke-linecap="round" fill="none"/></symbol>
+  <!-- studio upgrades -->
+  <symbol id="m-hp" viewBox="0 0 24 24"><path d="M12 21s-8.5-5.2-8.5-11A4.8 4.8 0 0 1 12 7a4.8 4.8 0 0 1 8.5 3c0 5.8-8.5 11-8.5 11z" fill="#ff3d71"/><path d="M7 8.5a2.4 2.4 0 0 1 3-1" stroke="#fff" stroke-opacity=".6" stroke-width="1.6" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="m-dmg" viewBox="0 0 24 24"><path d="M3.5 9h3.8L12 5v14l-4.7-4H3.5z" fill="#c9d2ff"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.3 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#3df2ff" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="m-spd" viewBox="0 0 24 24"><path d="M3 15c3 0 4-3 6-5l3 2c2 1.5 4 2 8 2.5 1 .1 1.5 1 1.5 2v1H3z" fill="#c9a8ff"/><path d="M3 18.5h18.5" stroke="#8a62ff" stroke-width="2"/><path d="M9 10l1.5-3M12 12l1.5-3" stroke="#fff" stroke-width="1.4"/></symbol>
+  <symbol id="m-mag" viewBox="0 0 24 24"><path d="M5 4h4.5v8a2.5 2.5 0 0 0 5 0V4H19v8a7 7 0 0 1-14 0z" fill="#ff3d71"/><rect x="5" y="4" width="4.5" height="3.5" fill="#e8e2ff"/><rect x="14.5" y="4" width="4.5" height="3.5" fill="#e8e2ff"/></symbol>
+  <symbol id="m-xp" viewBox="0 0 24 24"><path d="M12 1.5c.7 5.6 2.2 7.6 9.5 8.6-7.3 1-8.8 3-9.5 8.6-.7-5.6-2.2-7.6-9.5-8.6 7.3-1 8.8-3 9.5-8.6z" fill="url(#g-gold)"/><path d="M19.5 15.5c.3 2.2.9 3 3.5 3.4-2.6.4-3.2 1.2-3.5 3.4-.3-2.2-.9-3-3.5-3.4 2.6-.4 3.2-1.2 3.5-3.4z" fill="#ff8ad9"/></symbol>
+  <symbol id="m-tempo" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="8" fill="#2a2050" stroke="#ff3df2" stroke-width="2"/><path d="M12 9v4.5l3 2" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/><rect x="10" y="2.5" width="4" height="3" rx="1" fill="#ff3df2"/></symbol>
+</svg>
+
+<canvas id="gl"></canvas>
+<canvas id="c"></canvas>
+<button id="pauseBtn" aria-label="Pause"><svg><use href="#i-pause"/></svg></button>
+
+<div id="menu" class="screen on"><div class="mwrap"><div class="card">
+  <h1 class="logo"><b>BASSLINE</b><svg viewBox="0 0 200 22" preserveAspectRatio="none" aria-hidden="true"><path d="M0 11h60l4-6 4 12 4-14 4 16 4-10 4 6h40l3-4 3 8 3-6 3 2h60" fill="none" stroke="url(#g-neon)" stroke-width="2" stroke-linejoin="round"/></svg></h1>
+  <p class="tag">The Silence is coming.<br>Your weapons are the music.</p>
+  <button class="btn primary" id="playBtn"><svg><use href="#i-play"/></svg>Play</button>
+  <button class="btn list" id="dailyBtn"><svg style="color:#e8e2ff"><use href="#i-bars"/></svg><span class="tx"><span id="dName">Daily Mix</span><small id="dSubM">Same spawns and upgrades for everyone today</small></span></button>
+  <button class="btn list" id="studioBtn"><svg style="color:#e8e2ff"><use href="#i-flask"/></svg><span class="tx">Studio</span></button>
+  <div class="stats"><div><svg class="ic"><use href="#i-clock"/></svg><b id="mBest">0:00</b>best time</div><div><svg class="ic"><use href="#i-disc"/></svg><b id="mVinyl">0</b>vinyl</div><div><svg class="ic"><use href="#i-skull"/></svg><b id="mKills">0</b>best kills</div></div>
+  <div class="klabel">Pick your track</div>
+  <div class="tracks" id="tracks"></div>
+  <button class="link" id="muteBtn"><svg><use id="muteIco" href="#i-sound"/></svg><span id="muteTx">Sound: on</span></button>
+</div>
+<div class="card side">
+  <h3 class="neon">Daily missions</h3>
+  <div class="mreset" id="misReset"></div>
+  <div id="misList"></div>
+  <div class="streak" id="streakRow"></div>
+</div></div></div>
+
+<div id="lvl" class="screen"><div class="card">
+  <h2 class="neon" id="lvlTitle">LEVEL UP</h2>
+  <div class="sub" id="lvlSub">Pick one</div>
+  <div class="choices" id="choices"></div>
+  <button class="btn" id="rerollBtn">Reroll</button>
+</div></div>
+
+<div id="over" class="screen"><div class="card">
+  <svg class="topart wide" viewBox="0 0 320 80" aria-hidden="true">
+    <g fill="url(#g-neon)">
+      <rect x="10" y="44" width="5" height="20" rx="2"/><rect x="20" y="30" width="5" height="34" rx="2"/><rect x="30" y="40" width="5" height="24" rx="2"/><rect x="40" y="20" width="5" height="44" rx="2"/><rect x="50" y="34" width="5" height="30" rx="2"/><rect x="60" y="14" width="5" height="50" rx="2"/><rect x="70" y="28" width="5" height="36" rx="2"/><rect x="80" y="38" width="5" height="26" rx="2"/><rect x="90" y="22" width="5" height="42" rx="2"/><rect x="100" y="36" width="5" height="28" rx="2"/><rect x="110" y="46" width="5" height="18" rx="2"/>
+      <rect x="205" y="46" width="5" height="18" rx="2"/><rect x="215" y="36" width="5" height="28" rx="2"/><rect x="225" y="22" width="5" height="42" rx="2"/><rect x="235" y="38" width="5" height="26" rx="2"/><rect x="245" y="28" width="5" height="36" rx="2"/><rect x="255" y="14" width="5" height="50" rx="2"/><rect x="265" y="34" width="5" height="30" rx="2"/><rect x="275" y="20" width="5" height="44" rx="2"/><rect x="285" y="40" width="5" height="24" rx="2"/><rect x="295" y="30" width="5" height="34" rx="2"/><rect x="305" y="44" width="5" height="20" rx="2"/>
+    </g>
+    <use href="#i-vinylc" x="125" y="0" width="70" height="70"/>
+  </svg>
+  <div class="sub" id="oTitle">The music stopped</div>
+  <div class="big" id="oTime">0:00</div>
+  <div class="best" id="oBest"></div>
+  <div class="stats"><div><svg class="ic"><use href="#i-skull"/></svg><b id="oKills">0</b>silenced</div><div><svg class="ic" style="color:#a46bff"><use href="#i-bars"/></svg><b id="oLevel">1</b>level</div><div><svg class="ic"><use href="#i-disc"/></svg><b id="oVinyl">0</b>vinyl</div></div>
+  <div class="mmini" id="oMis"></div>
+  <button class="btn ad" id="reviveBtn"><svg><use href="#i-play"/></svg><span class="tx">Revive<small>Watch a short ad</small></span></button>
+  <button class="btn primary" id="againBtn"><svg><use href="#i-play"/></svg>Play again</button>
+  <button class="btn" id="shareBtn"><svg><use href="#i-share"/></svg>Share</button>
+  <div class="row"><button class="btn" id="oStudioBtn"><svg><use href="#i-flask"/></svg>Studio</button><button class="btn" id="oMenuBtn"><svg><use href="#i-list"/></svg>Menu</button></div>
+</div></div>
+
+<div id="win" class="screen"><div class="card">
+  <svg class="topart" viewBox="0 0 100 100" aria-hidden="true"><use href="#i-vinyl" x="0" y="0" width="100" height="100"/></svg>
+  <h2 class="neon">TRACK COMPLETE</h2>
+  <p class="sub" style="margin:10px 0 6px;line-height:1.45">You outlasted the Silence for the whole track. +50 vinyl.<br>Keep going? It only gets louder.</p>
+  <button class="btn primary" id="encoreBtn"><svg><use href="#i-play"/></svg>Encore (keep playing)</button>
+  <button class="btn" id="endBtn"><svg><use href="#i-stop"/></svg>End the set</button>
+</div></div>
+
+<div id="studio" class="screen"><div class="card">
+  <h2>Studio</h2>
+  <div class="sub" style="font-size:14px">Spend vinyl on upgrades that last forever.<br>You have <span class="have"><b id="sVinyl">0</b><svg><use href="#i-disc"/></svg></span></div>
+  <div class="shop" id="shop"></div>
+  <button class="btn" id="sBackBtn"><svg><use href="#i-back"/></svg>Back</button>
+</div></div>
+
+<div id="paused" class="screen"><div class="card">
+  <h2>Paused</h2>
+  <button class="btn primary" id="resumeBtn"><svg><use href="#i-play"/></svg>Resume</button>
+  <button class="btn" id="quitBtn"><svg><use href="#i-stop"/></svg>End run</button>
+</div></div>
+
+<div id="ad"><div class="t">AD PLACEHOLDER</div><div class="n" id="adN">3</div><div class="t">A portal ad (CrazyGames / Poki) plays here</div></div>
+<div id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+const COVER = /[?&]cover\b/.test(location.search);   // ?cover: marketing captures with no on-screen text (portals allow only the title)
+
+/* ================= Portal / ads adapter =================
+   One block, identical in every game (source: Game Studio/_shared/portal.js).
+   On CrazyGames it loads their SDK v3 and sends ads and gameplay events through it.
+   Anywhere else there is no ad network: rewards are granted straight away and
+   between-game ads are skipped. Add ?adtest to a URL to see a 3-second placeholder
+   where an ad would play; add ?cg on localhost to run the real SDK in its local mode. */
+const Portal = (() => {
+  const q = location.search;
+  const onPortal = /(^|\.)crazygames\.[a-z.]+$/i.test(location.hostname) || /[?&]cg\b/.test(q);
+  const adTest = /[?&]adtest\b/.test(q);
+  let sdk = null, siteMuted = false, adPlaying = false, playing = false;
+
+  // keep a handle on every AudioContext the game creates, so sound can pause for ads and the site's mute switch
+  const contexts = [], applyAudio = () => { for (const c of contexts){ try { (siteMuted || adPlaying) ? c.suspend() : c.resume(); } catch(e){} } };
+  const NativeAC = window.AudioContext || window.webkitAudioContext;
+  if (NativeAC){
+    const Tracked = function(...args){ const c = new NativeAC(...args); contexts.push(c); if (siteMuted || adPlaying) c.suspend(); return c; };
+    Tracked.prototype = NativeAC.prototype;
+    window.AudioContext = Tracked; if (window.webkitAudioContext) window.webkitAudioContext = Tracked;
+  }
+
+  const ready = !onPortal ? Promise.resolve() : new Promise(done => {
+    const s = document.createElement('script');
+    s.src = 'https://sdk.crazygames.com/crazygames-sdk-v3.js';
+    s.onload = async () => {
+      try {
+        await window.CrazyGames.SDK.init(); sdk = window.CrazyGames.SDK;
+        const onSettings = st => { siteMuted = !!(st && st.muteAudio); applyAudio(); };
+        onSettings(sdk.game.settings); sdk.game.addSettingsChangeListener(onSettings);
+        if (playing) sdk.game.gameplayStart();
+      } catch(e){ sdk = null; }
+      done();
+    };
+    s.onerror = () => done();          // an ad blocker can stop the SDK loading; the game still has to work
+    document.head.appendChild(s);
+  });
+
+  // Saved progress. On CrazyGames it must go through their Data Module: it syncs to the player's
+  // account across devices, and their docs require games to rely on it there instead of local saves.
+  // Everywhere else it is plain localStorage. Neither function ever throws.
+  function localGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function localSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+  let dataOff = false;
+  // resolves with the stored string (or null); on the portal it waits for the SDK to finish loading the player's data
+  function loadSave(key){
+    if (!onPortal) return Promise.resolve(localGet(key));
+    const slow = new Promise(r => setTimeout(() => r('slow'), 8000));
+    return Promise.race([ready, slow]).then(v => {
+      if (v !== 'slow' && sdk && sdk.data){ try { return sdk.data.getItem(key); } catch(e){} }
+      // SDK blocked (ad blocker) or too slow: this session saves on the device only,
+      // so a late SDK can never overwrite the player's account progress with this session's start
+      dataOff = true;
+      return localGet(key);
+    });
+  }
+  function writeSave(key, value){
+    if (sdk && sdk.data && !dataOff){ try { sdk.data.setItem(key, value); return; } catch(e){} }
+    localSet(key, value);
+  }
+
+  function placeholder(){
+    return new Promise(res => {
+      adPlaying = true; applyAudio();
+      const el = document.getElementById('ad'), n = document.getElementById('adN'); let s = 3; n.textContent = s; el.classList.add('on');
+      const iv = setInterval(() => { s--; n.textContent = s; if (s <= 0){ clearInterval(iv); el.classList.remove('on'); adPlaying = false; applyAudio(); res(true); } }, 1000);
+    });
+  }
+  function gameplayStart(){ if (playing) return; playing = true; if (sdk) try { sdk.game.gameplayStart(); } catch(e){} }
+  function gameplayStop(){ if (!playing) return; playing = false; if (sdk) try { sdk.game.gameplayStop(); } catch(e){} }
+  // resolves true only when the player earned the reward
+  function requestAd(type){
+    return new Promise(async res => {
+      await ready;
+      if (!sdk){
+        if (adTest) return placeholder().then(res);
+        // off-portal there is no ad to watch, so the reward is free; on CrazyGames with no SDK (ad blocker) there is no reward
+        return res(type !== 'rewarded' || !onPortal);
+      }
+      const wasPlaying = playing; gameplayStop();
+      // after the ad, put gameplay back the way it was (the game itself restarts it after a revive)
+      const done = ok => { adPlaying = false; applyAudio(); if (wasPlaying) gameplayStart(); res(ok); };
+      try {
+        sdk.ad.requestAd(type === 'rewarded' ? 'rewarded' : 'midgame', {
+          adStarted(){ adPlaying = true; applyAudio(); },
+          adFinished(){ done(true); },
+          adError(){ done(false); },       // never reward a failed ad
+        });
+      } catch(e){ done(false); }
+    });
+  }
+  return {
+    get audioBlocked(){ return siteMuted || adPlaying; },        // the sound code must not resume audio while this is true
+    onPortal,
+    rewarded: () => requestAd('rewarded'),
+    interstitial: () => requestAd('midgame'),
+    gameplayStart, gameplayStop,
+    happytime(){ if (sdk) try { sdk.game.happytime(); } catch(e){} },
+    loadSave, writeSave,
+  };
+})();
+
+/* ================= Helpers ================= */
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const fmtTime = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+function mulberry32(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function dayKey(d = new Date()){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+const EPOCH = new Date(2026, 9, 29);
+function dailyNumber(){ const t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((t - EPOCH) / 864e5) + 1; }
+function toast(m){ const t = $('toast'); t.textContent = m; t.style.opacity = 1; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.opacity = 0, 1600); }
+// Daily Mix is seeded with three separate streams, so one never shifts another:
+// rng = enemy spawns, rngOffer = level-up offers, rngFx = combat rolls (crits, drops, aim)
+let rng = Math.random, rngOffer = Math.random, rngFx = Math.random;
+
+/* ================= Save ================= */
+const SAVE_KEY = 'bassline.v1';
+const save = { vinyl: 0, meta: {}, best: 0, bestKills: 0, muted: false, runs: 0, daily: {}, track: 'synth', tracks: ['synth'], mis: null, login: null };
+// On CrazyGames progress lives in their Data Module, which is only readable once the SDK has loaded,
+// so there the save starts as defaults and nothing is written until the player's data has arrived (see boot()).
+let saveReady = !Portal.onPortal;
+function applySave(str){
+  let o = {}; try { o = JSON.parse(str) || {}; } catch(e){}
+  if (o && typeof o === 'object' && !Array.isArray(o)) Object.assign(save, o);
+  repairSave();
+}
+// repair anything malformed, field by field, so a bad save can never stop the game
+function repairSave(){ const num = (k, d = 0) => { if (typeof save[k] !== 'number' || !Number.isFinite(save[k]) || save[k] < 0) save[k] = d; };
+  num('vinyl'); num('best'); num('bestKills'); num('runs');
+  const obj = k => { if (!save[k] || typeof save[k] !== 'object' || Array.isArray(save[k])) save[k] = {}; };
+  obj('meta'); obj('daily'); for (const k in save.meta) if (typeof save.meta[k] !== 'number' || !(save.meta[k] >= 0)) delete save.meta[k];
+  if (!Array.isArray(save.tracks)) save.tracks = ['synth']; save.tracks = save.tracks.filter(t => typeof t === 'string'); if (!save.tracks.includes('synth')) save.tracks.unshift('synth');
+  if (typeof save.track !== 'string') save.track = 'synth'; save.muted = !!save.muted;
+  if (save.mis && (typeof save.mis !== 'object' || !Array.isArray(save.mis.ids) || typeof save.mis.prog !== 'object' || typeof save.mis.done !== 'object' || !save.mis.prog || !save.mis.done)) save.mis = null;
+  if (save.login && (typeof save.login !== 'object' || typeof save.login.last !== 'string' || typeof save.login.n !== 'number')) save.login = null;
+}
+if (saveReady){ let str = null; try { str = localStorage.getItem(SAVE_KEY); } catch(e){} applySave(str); }
+function persist(){ if (saveReady) Portal.writeSave(SAVE_KEY, JSON.stringify(save)); }
+const meta = id => save.meta[id] || 0;
+
+/* ================= Sound: a synth band you play by fighting ================= */
+// Everything is synthesised. The track's groove and every weapon go through one mix: a music bus that pumps
+// (sidechain-style) under each kick, a stereo echo for space, and a gentle compressor. The weapons are the
+// instruments, so a full arsenal sounds like a full band.
+const Sound = (() => {
+  let A = null, master = null, mus = null, sfx = null, verb = null, delayIn = null, noise = null, ducked = false;
+  const midi = m => 440 * Math.pow(2, (m - 69) / 12);
+  // Am - F - C - G, one chord per bar
+  const CHORDS = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];
+  const VOL = .62;
+  function init(){
+    if (A) { if (A.state === 'suspended' && !Portal.audioBlocked) A.resume(); return; }
+    try {
+      A = new (window.AudioContext || window.webkitAudioContext)();
+      const comp = A.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 5; comp.attack.value = .004; comp.release.value = .15; comp.connect(A.destination);
+      master = A.createGain(); master.gain.value = save.muted ? 0 : VOL; master.connect(comp);
+      mus = A.createGain(); mus.gain.value = 1; mus.connect(master);
+      sfx = A.createGain(); sfx.gain.value = 1; sfx.connect(master);
+      // a short room
+      verb = A.createConvolver(); { const n = A.sampleRate * 1.8, b = A.createBuffer(2, n, A.sampleRate); for (let c = 0; c < 2; c++){ const d = b.getChannelData(c); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.8); } verb.buffer = b; }
+      const vg = A.createGain(); vg.gain.value = .22; verb.connect(vg).connect(master);
+      // a dotted-eighth ping-pong echo for the leads
+      delayIn = A.createGain(); delayIn.gain.value = .3;
+      const dl = A.createDelay(1), dr = A.createDelay(1), fb = A.createGain(), lp = A.createBiquadFilter(), pl = A.createStereoPanner ? A.createStereoPanner() : A.createGain(), prr = A.createStereoPanner ? A.createStereoPanner() : A.createGain();
+      dl.delayTime.value = .33; dr.delayTime.value = .33; fb.gain.value = .38; lp.type = 'lowpass'; lp.frequency.value = 3200;
+      if (pl.pan){ pl.pan.value = -.7; prr.pan.value = .7; }
+      delayIn.connect(dl); dl.connect(lp).connect(dr); dr.connect(fb).connect(dl); dl.connect(pl).connect(master); dr.connect(prr).connect(master);
+      Sound._dl = dl; Sound._dr = dr; if (TK){ dl.delayTime.value = dr.delayTime.value = 60 / TK.bpm * .75; }     // the echo follows the track's tempo
+      noise = A.createBuffer(1, A.sampleRate, A.sampleRate);
+      const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    } catch(e){ A = null; }
+  }
+  const ok = () => A && master && !save.muted;
+  let TK = null;                                   // the current track's instruments
+  const wet = (node, r = 0, e = 0) => { if (r){ const g = A.createGain(); g.gain.value = r; node.connect(g).connect(verb); } if (e){ const g = A.createGain(); g.gain.value = e; node.connect(g).connect(delayIn); } };
+  function env(node, v, dur, t, dest, att = .004){ const g = A.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + att); g.gain.exponentialRampToValueAtTime(.0008, t + dur); node.connect(g).connect(dest || sfx); return g; }
+  function osc(type, f, v, dur, slideTo, dest, r = .1){
+    const t = A.currentTime, o = A.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur * .6);
+    const g = env(o, v, dur, t, dest); wet(g, r); o.start(t); o.stop(t + dur + .02); return g;
+  }
+  function hiss(v, dur, type, freq, dest, r = .08, q = 1){
+    const t = A.currentTime, s = A.createBufferSource(); s.buffer = noise;
+    const f = A.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+    s.connect(f); const g = env(f, v, dur, t, dest, .002); wet(g, r); s.start(t, Math.random() * .5); s.stop(t + dur + .02); return g;
+  }
+  // two detuned oscillators through a filter that closes over the note: fat, moving synths
+  function synth(type, f, v, dur, cutoff, dest, { det = 9, res = 4, r = .15, e = 0, sub = 0 } = {}){
+    const t = A.currentTime, lp = A.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = res;
+    lp.frequency.setValueAtTime(cutoff * 2.2, t); lp.frequency.exponentialRampToValueAtTime(cutoff * .35, t + dur);
+    for (const dd of [-det, det]){ const o = A.createOscillator(); o.type = type; o.frequency.value = f; o.detune.value = dd; o.connect(lp); o.start(t); o.stop(t + dur + .03); }
+    if (sub){ const o = A.createOscillator(); o.type = 'sine'; o.frequency.value = f / 2; const g = A.createGain(); g.gain.value = sub; o.connect(g).connect(lp); o.start(t); o.stop(t + dur + .03); }
+    const g = env(lp, v, dur, t, dest); wet(g, r, e); return g;
+  }
+  // the pump: the music bus dips on every kick and swells back, like a club mix
+  function pump(depth = .55){ if (!mus) return; const t = A.currentTime; mus.gain.cancelScheduledValues(t); mus.gain.setValueAtTime(1 - depth, t); mus.gain.linearRampToValueAtTime(1, t + .22); }
+  return {
+    init, CHORDS, midi,
+    get ctx(){ return A; }, get out(){ return master; },        // for the test tools
+    setMuted(m){ if (master) master.gain.value = m ? 0 : (ducked ? .05 : VOL); },
+    duck(on){ ducked = on; if (master && !save.muted) master.gain.value = on ? .05 : VOL; },
+    // kick: a pitched sine thump with a click on top
+    kick(v = 1){ if (!ok()) return; osc('sine', 160, 1.1 * v, .34, 40, sfx, 0); hiss(.18 * v, .02, 'highpass', 3000, sfx, 0); pump(.5 * Math.min(1, v + .3)); },
+    // snare: a tuned body and a bright noise burst, with room
+    snare(v = 1){ if (!ok()) return; hiss(.42 * v, .18, 'bandpass', 2200, sfx, .25, .8); hiss(.2 * v, .09, 'highpass', 6000, sfx, .1); osc('triangle', 230, .3 * v, .1, 170, sfx, .1); },
+    hat(v = 1){ if (ok()) hiss(.16 * v, .04, 'highpass', 9000, mus, .03); },
+    crash(v = 1){ if (!ok()) return; hiss(.32 * v, 1.6, 'highpass', 5000, sfx, .4); hiss(.12 * v, .9, 'bandpass', 900, sfx, .3); osc('sine', 60, .5 * v, .6, 35, sfx, 0); },
+    setTrack(t){ TK = t; if (A && Sound._dl && TK){ const beat = 60 / TK.bpm; Sound._dl.delayTime.value = Sound._dr.delayTime.value = beat * .75; } },
+    // the bass: a fat detuned synth with a sub under it, pumping on the bus
+    bass(m, v = 1){ if (ok()) synth(TK ? TK.bassWave : 'sawtooth', midi(m - 24), .26 * v * (TK ? TK.bassV : 1), .34, TK ? TK.bassCut : 700, mus, { det: 7, res: 6, r: .05, sub: .8 }); },
+    // the lead: a bright pluck into the stereo echo
+    pluck(m, v = 1){ if (ok()) synth(TK ? TK.leadWave : 'square', midi(m + 12), .07 * v * (TK ? TK.leadV : 1), TK ? TK.leadDur * 1.3 : .2, TK ? TK.leadCut : 3200, sfx, { det: 6, res: 5, r: .2, e: .55 }); },
+    // the pad: a wide chord that swells over the bar
+    pad(chord){
+      if (!ok()) return; const t = A.currentTime, dur = 2.4, lp = A.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime((TK ? TK.padCut : 1200) * .5, t); lp.frequency.linearRampToValueAtTime((TK ? TK.padCut : 1200) * 1.4, t + dur * .6);
+      for (const m of chord) for (const dd of [-12, 0, 12]){ const o = A.createOscillator(); o.type = TK ? TK.padWave : 'triangle'; o.frequency.value = midi(m); o.detune.value = dd; o.connect(lp); o.start(t); o.stop(t + dur + .05); }
+      const g = A.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.022 * (TK ? TK.padV : 1), t + .5); g.gain.linearRampToValueAtTime(.0001, t + dur); lp.connect(g).connect(mus); wet(g, .6);
+    },
+    crackle(){ if (ok()) hiss(.025 + Math.random() * .02, .03, 'highpass', 2500 + Math.random() * 3000, mus, 0); },   // lo-fi vinyl dust
+    pop(c = 0){ if (ok()) osc('square', (600 + Math.random() * 120) * Math.pow(1.03, Math.min(c, 24)), .025, .05, 200, sfx, .05); },   // climbs with the combo
+    streak(n){ if (!ok()) return; const base = 64 + Math.min(n, 6) * 2; [0, 4, 7, 12, 16].forEach((st, k) => setTimeout(() => synth('sawtooth', midi(base + st), .05, .3, 4000, sfx, { r: .3, e: .4 }), k * 55)); },
+    slow(){ if (ok()){ osc('sawtooth', 220, .12, .8, 60, sfx, .3); hiss(.12, .7, 'lowpass', 900, sfx, .3); } },
+    gem(){ if (ok()) osc('sine', 1300 + Math.random() * 400, .025, .07, 0, sfx, .15); },
+    hurt(){ if (ok()){ osc('sawtooth', 120, .22, .22, 55, sfx, .1); hiss(.15, .15, 'lowpass', 600, sfx, 0); } },
+    level(){ if (!ok()) return; [0, 4, 7, 12, 16].forEach((s, k) => setTimeout(() => synth('sawtooth', midi(69 + s), .06, .35, 5000, sfx, { r: .35, e: .35 }), k * 65)); },
+  };
+})();
+
+/* ================= Content ================= */
+// Weapons: every one is an instrument. `steps` = which 16th notes of the bar it fires on.
+const WEAPONS = {
+  snare: { name: 'Snare Bolt', ic: '⚡', color: '#ffe14d', max: 5,
+    desc: ['Fires a bolt at the nearest enemy on every beat', '+35% damage', 'Fires on the off-beats too', 'Bolts pierce 2 enemies', 'Fires two bolts at once'],
+    steps: L => L >= 3 ? [0, 4, 6, 8, 12, 14] : [0, 4, 8, 12] },
+  kick: { name: 'Kick Pulse', ic: '💥', color: '#3df2ff', max: 5,
+    desc: ['A shockwave around you on beats 1 and 3', '+30% damage, bigger ring', 'Pushes enemies further', 'Fires on every beat', 'Huge ring, +40% damage'],
+    steps: L => L >= 4 ? [0, 4, 8, 12] : [0, 8] },
+  hats: { name: 'Hi-Hat Needles', ic: '✴️', color: '#b3ff4d', max: 5,
+    desc: ['A spray of needles where you move, on every 8th note', '+1 needle', '+30% damage', 'Fires on every 16th note', '+2 needles'],
+    steps: L => L >= 4 ? [...Array(16).keys()] : [0, 2, 4, 6, 8, 10, 12, 14] },
+  bass: { name: 'Bass Orbs', ic: '🔮', color: '#ff3df2', max: 5,
+    desc: ['An orb circles you and hits what it touches', '+1 orb', '+30% damage, wider orbit', '+1 orb', '+1 orb, +30% damage'],
+    steps: () => [0, 6, 10] },
+  arp: { name: 'Arp Laser', ic: '🎹', color: '#7d8bff', max: 5,
+    desc: ['Laser beams that cut through lines of enemies', 'Twice as many beams', '+30% damage', 'Even more beams', 'Longer beams, +40% damage'],
+    steps: L => [[2, 10], [2, 6, 10, 14], [2, 6, 10, 14], [0, 2, 5, 6, 8, 10, 13, 14], [0, 2, 4, 5, 6, 8, 10, 12, 13, 14]][L - 1] },
+  crash: { name: 'Crash Cymbal', ic: '🥁', color: '#ffffff', max: 5,
+    desc: ['A massive blast every 2 bars', '+30% damage', 'Bigger blast', 'Every bar', 'Enormous, +40% damage'],
+    steps: () => [0] },
+};
+const WSTAT = {
+  snare: { dmg: [14, 19, 19, 23, 28], count: [1, 1, 1, 1, 2], pierce: [0, 0, 0, 2, 2] },
+  kick:  { dmg: [9, 12, 12, 14, 20], r: [80, 92, 100, 112, 140], knock: [120, 130, 220, 230, 260] },
+  hats:  { dmg: [5, 5, 7, 7, 8], count: [2, 3, 3, 3, 5] },
+  bass:  { dmg: [9, 9, 12, 12, 16], count: [1, 2, 2, 3, 4], r: [64, 66, 80, 82, 92] },
+  arp:   { dmg: [15, 15, 20, 21, 28], len: [300, 300, 320, 330, 420] },
+  crash: { dmg: [35, 46, 50, 55, 78], r: [170, 180, 220, 230, 280], every: [2, 2, 2, 1, 1] },
+};
+const PASSIVES = {
+  tempo:  { name: 'Tempo Up', ic: '⏱️', max: 5, desc: '+8 BPM: the music and every weapon speed up' },
+  volume: { name: 'Volume', ic: '📢', max: 5, desc: '+15% size for rings, orbs and beams' },
+  boots:  { name: 'Dance Shoes', ic: '👟', max: 5, desc: '+10% move speed' },
+  heart:  { name: 'Encore', ic: '❤️', max: 5, desc: '+20 max health and heal 30' },
+  magnet: { name: 'Fan Club', ic: '🧲', max: 5, desc: '+35% pickup range' },
+  accent: { name: 'Accent', ic: '❗', max: 5, desc: '+8% chance of a double-damage hit' },
+};
+const META = [
+  { id: 'hp',    name: 'Bigger Amp',  ic: '❤️', desc: '+15 max health',      base: 15, grow: 1.6, max: 8 },
+  { id: 'dmg',   name: 'Louder',      ic: '🔊', desc: '+8% damage',          base: 20, grow: 1.6, max: 8 },
+  { id: 'spd',   name: 'Light Feet',  ic: '👟', desc: '+5% move speed',      base: 15, grow: 1.6, max: 5 },
+  { id: 'mag',   name: 'Groupies',    ic: '🧲', desc: '+15% pickup range',   base: 10, grow: 1.5, max: 5 },
+  { id: 'xp',    name: 'Crowd Love',  ic: '✨', desc: '+8% experience',      base: 20, grow: 1.6, max: 5 },
+  { id: 'tempo', name: 'Warm-up',     ic: '⏱️', desc: 'Start +4 BPM faster', base: 25, grow: 1.7, max: 5 },
+];
+const metaCost = m => Math.round(m.base * Math.pow(m.grow, meta(m.id)));
+/* ---- Tracks: each one changes the tempo, the sound, the enemy mix and the boss ----
+   Weapons fire on 16th notes, so a faster track also means more shots: enemy health and speed are
+   scaled per track to keep survival time in the same range (checked with the bot). */
+const TRACKS = [
+  { id: 'synth', name: 'Synthwave', bpm: 108, color: '#3df2ff', unlockT: 0, cost: 0,
+    chords: [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]],
+    bassWave: 'sawtooth', bassV: 1, bassCut: 700, leadWave: 'square', leadV: 1, leadDur: .16, leadCut: 3200, padWave: 'triangle', padV: 1, padCut: 1200,
+    kick: [0, 8], snare: [], hat: [2, 6, 10, 14], hatV: .5, crackle: false,
+    hp: 1, spd: 1, rate: 1,
+    kind(t, r){ if (t > 170 && r > .95) return 'spitter'; if (t > 120 && r > .86) return 'brick'; if (t > 40 && r < .3) return 'glitch'; return 'static'; },
+    boss: { name: 'THE MUTE APPROACHES', color: '#f4f1ff', cd: 3.2, n: 14, spd: 140 } },
+  { id: 'dnb', name: 'Drum & Bass', bpm: 132, color: '#ffe14d', unlockT: 120, cost: 120,
+    chords: [[62, 65, 69], [58, 62, 65], [53, 57, 60], [60, 64, 67]],
+    bassWave: 'square', bassV: .8, bassCut: 900, leadWave: 'sawtooth', leadV: .8, leadDur: .1, leadCut: 4200, padWave: 'sawtooth', padV: .55, padCut: 900,
+    kick: [0, 10], snare: [4, 12], hat: [0, 2, 3, 4, 6, 8, 10, 11, 12, 14], hatV: .3, crackle: false,
+    hp: 1.3, spd: 1.04, rate: 1,
+    kind(t, r){ if (t > 170 && r > .96) return 'spitter'; if (t > 140 && r > .9) return 'brick'; if (t > 20 && r < .45) return 'glitch'; return 'static'; },
+    boss: { name: 'THE GLITCH KING', color: '#ffe14d', cd: 2.3, n: 10, spd: 190 } },
+  { id: 'lofi', name: 'Lo-fi', bpm: 88, color: '#ff8ad9', unlockT: 240, cost: 250,
+    chords: [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]],
+    bassWave: 'triangle', bassV: 1.3, bassCut: 500, leadWave: 'sine', leadV: 1.6, leadDur: .3, leadCut: 1800, padWave: 'sine', padV: 1.4, padCut: 900,
+    kick: [0, 7, 10], snare: [8], hat: [2, 6, 10, 14], hatV: .3, crackle: true,
+    hp: .68, spd: .9, rate: 1,
+    kind(t, r){ if (t > 120 && r > .92) return 'spitter'; if (t > 80 && r > .76) return 'brick'; if (t > 60 && r < .14) return 'glitch'; return 'static'; },
+    boss: { name: 'THE HUSH', color: '#ff8ad9', cd: 3.8, n: 20, spd: 110 } },
+];
+const trackById = id => TRACKS.find(t => t.id === id) || TRACKS[0];
+const trackUnlocked = t => !t.unlockT || save.tracks.includes(t.id) || save.best >= t.unlockT;
+const dailyTrack = () => TRACKS[((dailyNumber() % TRACKS.length) + TRACKS.length) % TRACKS.length];   // same for everyone today
+/* ---- Daily missions: three a day, the same for everyone, picked from the date ---- */
+const MISSIONS = [
+  { id: 'kills',  text: 'Silence 300 in one run',         short: '300 in a run',   goal: 300,  pay: 20 },
+  { id: 'survive',text: 'Survive 3:00',                   short: 'Survive 3:00',   goal: 180,  pay: 20, time: true },
+  { id: 'level',  text: 'Reach level 10',                 short: 'Level 10',       goal: 10,   pay: 15 },
+  { id: 'maxw',   text: 'Max out a weapon',               short: 'Max a weapon',   goal: 1,    pay: 25 },
+  { id: 'boss',   text: 'Silence a boss',                 short: 'Beat a boss',    goal: 1,    pay: 30 },
+  { id: 'drops',  text: 'Survive The Drop twice in a run',short: '2 Drops',        goal: 2,    pay: 15 },
+  { id: 'daily',  text: 'Play the Daily Mix',             short: 'Daily Mix',      goal: 1,    pay: 10 },
+  { id: 'total',  text: 'Silence 1,000 today',            short: '1,000 today',    goal: 1000, pay: 25 },
+  { id: 'band',   text: 'Play 4 instruments in one run',  short: '4 weapons',      goal: 4,    pay: 15 },
+  { id: 'streak', text: 'Hit a 100 kill streak',          short: '100 streak',     goal: 100,  pay: 20 },
+  { id: 'elite',  text: 'Silence 3 golden elites today',  short: '3 elites',       goal: 3,    pay: 20 },
+  { id: 'clean',  text: 'Go 1:00 without getting hit',    short: '1:00 untouched', goal: 60,   pay: 20, time: true },
+];
+const LOGIN_PAY = [10, 15, 20, 25, 30, 40, 50];     // day 1..7 of a streak, then it holds at 50
+const ENEMIES = {
+  static:  { r: 11, hp: 10,  spd: 58,  dmg: 8,  xp: 1,  color: '#ff3d71' },
+  glitch:  { r: 8,  hp: 6,   spd: 104, dmg: 6,  xp: 1,  color: '#ffb84d' },
+  brick:   { r: 19, hp: 55,  spd: 36,  dmg: 10, xp: 4,  color: '#9b5cff' },
+  spitter: { r: 12, hp: 22,  spd: 46,  dmg: 8,  xp: 3,  color: '#4dff8a' },
+  boss:    { r: 44, hp: 900, spd: 50,  dmg: 25, xp: 60, color: '#f4f1ff' },
+};
+const TRACK_LEN = 600;          // survive 10:00 to finish the track
+const MAX_ENEMIES = 340, MAX_GEMS = 260;
+// half the visible diagonal in world units; never tiny, even while an embed reports a 0x0 size
+const viewR = () => Math.max(420, Math.hypot(VW, VH) / 2 / scale);
+
+/* ================= Canvas ================= */
+const cvs = $('c'), ctx = cvs.getContext('2d');
+let dpr = 1, VW = 0, VH = 0, scale = 1;
+let lowRes = false;           // set when a slow phone can't hold the frame rate
+function resize(){
+  dpr = lowRes ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+  VW = innerWidth; VH = innerHeight;
+  cvs.width = VW * dpr; cvs.height = VH * dpr; cvs.style.width = VW + 'px'; cvs.style.height = VH + 'px';
+  scale = clamp(Math.min(VW, VH) / 620, .5, 1.4);
+}
+addEventListener('resize', resize); resize();
+const glowCache = {};
+function glow(color, r = 32){
+  const k = color + r; if (glowCache[k]) return glowCache[k];
+  const c = document.createElement('canvas'); c.width = c.height = r * 2; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(r, r, 0, r, r, r); gr.addColorStop(0, color); gr.addColorStop(.25, color + 'aa'); gr.addColorStop(1, color + '00');
+  g.fillStyle = gr; g.fillRect(0, 0, r * 2, r * 2); return glowCache[k] = c;
+}
+
+/* ================= Art: bokeh backdrop, menu decorations ================= */
+function rr(x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+const FONT = 'ui-rounded,"SF Pro Rounded","Nunito",system-ui,sans-serif';
+// soft out-of-focus club lights, painted once per window size
+const backdrop = { img: null, w: 0, h: 0 };
+function backdropImg(){
+  if (backdrop.img && backdrop.w === cvs.width && backdrop.h === cvs.height) return backdrop.img;
+  if (!cvs.width || !cvs.height) return null;
+  const c = document.createElement('canvas'); c.width = cvs.width; c.height = cvs.height;
+  const g = c.getContext('2d'), rnd = mulberry32(31), S = Math.max(VW, VH) / 900;
+  const lay = document.createElement('canvas'); lay.width = Math.ceil(c.width / 4); lay.height = Math.ceil(c.height / 4);
+  const n = lay.getContext('2d'); n.setTransform(dpr / 4, 0, 0, dpr / 4, 0, 0);
+  const base = n.createRadialGradient(VW * .5, VH * .5, 0, VW * .5, VH * .5, Math.max(VW, VH) * .75);
+  base.addColorStop(0, '#140b36'); base.addColorStop(1, '#05030f'); n.fillStyle = base; n.fillRect(0, 0, VW, VH);
+  n.globalCompositeOperation = 'lighter';
+  for (const [x, y, col] of [[.1, .15, '255,61,200'], [.9, .2, '100,80,255'], [.15, .85, '60,120,255'], [.88, .85, '255,61,140']]){
+    const r = 380 * S, gr = n.createRadialGradient(x * VW, y * VH, 0, x * VW, y * VH, r); gr.addColorStop(0, `rgba(${col},.22)`); gr.addColorStop(1, `rgba(${col},0)`); n.fillStyle = gr; n.fillRect(0, 0, VW, VH);
+  }
+  const cols = ['255,61,140', '160,80,255', '255,150,60', '60,140,255', '255,61,242'];
+  for (let i = 0; i < 70; i++){ const x = rnd() * VW, y = rnd() * VH, r = (8 + rnd() * 26) * S, col = cols[i % cols.length];
+    const gr = n.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${col},${.25 + rnd() * .3})`); gr.addColorStop(.7, `rgba(${col},${.12 + rnd() * .1})`); gr.addColorStop(1, `rgba(${col},0)`);
+    n.fillStyle = gr; n.beginPath(); n.arc(x, y, r, 0, TAU); n.fill(); }
+  g.imageSmoothingQuality = 'high'; if ('filter' in g) g.filter = `blur(${Math.round(2.5 * dpr)}px)`;
+  g.drawImage(lay, 0, 0, c.width, c.height); g.filter = 'none';
+  g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 260 * S; i++){ g.fillStyle = `rgba(${rnd() < .5 ? '200,190,255' : '255,255,255'},${.1 + rnd() * .4})`; g.fillRect(rnd() * VW, rnd() * VH, .6 + rnd(), .6 + rnd()); }
+  backdrop.img = c; backdrop.w = cvs.width; backdrop.h = cvs.height;
+  return c;
+}
+// floating neon shapes for the menu
+const DECO = Array.from({ length: 18 }, (_, i) => { const r = mulberry32(i * 977 + 3); return { x: r(), y: r(), s: 8 + r() * 16, k: ['ring', 'sq', 'dia', 'gem', 'ring', 'face'][i % 6], c: ['#ff3d9e', '#ffc23d', '#a46bff', '#3df2ff', '#ff3df2', '#ff3d71'][i % 6], ph: r() * TAU, sp: .2 + r() * .5 }; });
+function drawMenuArt(t){
+  if (COVER) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // a big record spinning in a purple swirl
+  const vx = VW * .8, vy = VH * .34, R = Math.min(VW, VH) * .11;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  for (let k = 0; k < 12; k++){ const rad = R * (1.15 + k * .16), a = t * (1.2 - k * .06) + k * 2.1;
+    ctx.save(); ctx.translate(vx, vy); ctx.rotate(-.35); ctx.scale(1, .55);
+    ctx.strokeStyle = `rgba(${k % 2 ? '170,90,255' : '255,61,242'},${.55 - k * .04})`; ctx.lineWidth = R * (.12 - k * .007);
+    ctx.beginPath(); ctx.arc(0, 0, rad, a, a + 1.6); ctx.stroke(); ctx.restore(); }
+  ctx.restore();
+  const gl = ctx.createRadialGradient(vx, vy, R * .9, vx, vy, R * 1.6); gl.addColorStop(0, 'rgba(180,90,255,.5)'); gl.addColorStop(1, 'rgba(180,90,255,0)'); ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(vx, vy, R * 1.6, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#07050f'; ctx.beginPath(); ctx.arc(vx, vy, R, 0, TAU); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1; for (let k = 1; k < 5; k++){ ctx.beginPath(); ctx.arc(vx, vy, R * (.45 + k * .12), 0, TAU); ctx.stroke(); }
+  ctx.save(); ctx.translate(vx, vy); ctx.rotate(t * 2); ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, R * .8, 0, .9); ctx.stroke(); ctx.restore();
+  // drifting shapes
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const d of DECO){
+    const x = d.x * VW + Math.sin(t * d.sp + d.ph) * 14, y = ((d.y * VH - t * 8 * d.sp) % VH + VH) % VH, s = d.s * Math.min(1.3, Math.max(.7, Math.min(VW, VH) / 700));
+    ctx.drawImage(glow(d.c, 32), x - s * 2, y - s * 2, s * 4, s * 4);
+  }
+  ctx.restore();
+  for (const d of DECO){
+    const x = d.x * VW + Math.sin(t * d.sp + d.ph) * 14, y = ((d.y * VH - t * 8 * d.sp) % VH + VH) % VH, s = d.s * Math.min(1.3, Math.max(.7, Math.min(VW, VH) / 700));
+    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * .5 + d.ph) * .4);
+    ctx.fillStyle = d.c; ctx.strokeStyle = d.c;
+    if (d.k === 'ring'){ ctx.lineWidth = s * .35; ctx.beginPath(); ctx.arc(0, 0, s * .7, 0, TAU); ctx.stroke(); }
+    else if (d.k === 'sq'){ rr(-s * .6, -s * .6, s * 1.2, s * 1.2, s * .2); ctx.fill(); ctx.fillStyle = '#2a1600'; ctx.beginPath(); ctx.arc(-s * .2, 0, s * .1, 0, TAU); ctx.arc(s * .2, 0, s * .1, 0, TAU); ctx.fill(); }
+    else if (d.k === 'dia' || d.k === 'gem'){ ctx.rotate(Math.PI / 4); rr(-s * .5, -s * .5, s, s, s * .15); ctx.fill(); }
+    else { ctx.beginPath(); ctx.arc(0, 0, s * .7, 0, TAU); ctx.fill(); ctx.fillStyle = '#07051a'; ctx.beginPath(); ctx.arc(-s * .22, -s * .05, s * .11, 0, TAU); ctx.arc(s * .22, -s * .05, s * .11, 0, TAU); ctx.fill(); }
+    ctx.restore();
+  }
+}
+function vinylIcon(x, y, r){
+  ctx.fillStyle = '#0d0b18'; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+  ctx.strokeStyle = 'rgba(200,190,255,.5)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = '#ff3df2'; ctx.beginPath(); ctx.arc(x, y, r * .4, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#0d0b18'; ctx.beginPath(); ctx.arc(x, y, r * .12, 0, TAU); ctx.fill();
+}
+
+/* ================= Spatial grid ================= */
+const CELL = 56, grid = new Map();
+const gkey = (cx, cy) => (cx + 50000) * 100003 + (cy + 50000);
+function gridBuild(){
+  grid.clear();
+  for (const e of G.enemies){ const k = gkey(Math.floor(e.x / CELL), Math.floor(e.y / CELL)); let a = grid.get(k); if (!a){ a = []; grid.set(k, a); } a.push(e); }
+}
+function query(x, y, r, cb){
+  const x0 = Math.floor((x - r) / CELL), x1 = Math.floor((x + r) / CELL), y0 = Math.floor((y - r) / CELL), y1 = Math.floor((y + r) / CELL);
+  for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++){ const a = grid.get(gkey(cx, cy)); if (a) for (const e of a) if (!e.dead) cb(e); }
+}
+function nearest(x, y, maxR){
+  let best = null, bd = maxR * maxR;
+  query(x, y, maxR, e => { const d = (e.x - x) ** 2 + (e.y - y) ** 2; if (d < bd){ bd = d; best = e; } });
+  return best;
+}
+
+/* ================= Run state ================= */
+let G = null, screen = 'menu', paused = false, runsSinceAd = 0;
+function newRun(daily = false){
+  const seed = (dailyNumber() * 2654435761) >>> 0;
+  rng = daily ? mulberry32(seed) : Math.random;
+  rngOffer = daily ? mulberry32((seed ^ 0x9e3779b9) >>> 0) : Math.random;
+  rngFx = daily ? mulberry32((seed ^ 0x85ebca6b) >>> 0) : Math.random;
+  ensureMissions();
+  const tr = daily ? dailyTrack() : (trackUnlocked(trackById(save.track)) ? trackById(save.track) : TRACKS[0]);
+  Sound.setTrack(tr);
+  const P = { x: 0, y: 0, r: 13, hp: 0, inv: 0, fx: 1, fy: 0 };
+  G = { daily, P, t: 0, kills: 0, level: 1, xp: 0, weapons: { snare: 1 }, passives: {}, enemies: [], shots: [], foes: [], rings: [], beams: [], gems: [], parts: [], texts: [],
+        step: 0, stepAcc: 0, pulse: 0, shake: 0, flash: 0, spawnAcc: 0, nextBoss: 300, nextDrop: 60, bosses: 0, revived: false, freeReroll: true,
+        pendingLevels: 0, offer: null, orbAng: 0, orbFlash: 0, won: false, dead: false, vinylBonus: 0, dropBanner: 0, bannerText: '',
+        waiting: false, hitStop: 0, slowMo: 0, nearDeathDone: false, combo: 0, comboT: 0, streak: 0, nextStreak: 50, tip: null, tipsShown: {},
+        tr, drops: 0, dropAt: -1, lastHurtT: 0, misT: 0, misDone: [] };
+  P.hp = maxHp();
+}
+const lv = id => G.weapons[id] || 0;
+const pv = id => G.passives[id] || 0;
+const maxHp = () => 100 + meta('hp') * 15 + pv('heart') * 20;
+const moveSpeed = () => 165 * (1 + meta('spd') * .05) * (1 + pv('boots') * .1);
+const magnetR = () => 95 * (1 + meta('mag') * .15) * (1 + pv('magnet') * .35);
+const area = () => 1 + pv('volume') * .15;
+const dmgMult = () => 1 + meta('dmg') * .08;
+const critChance = () => .05 + pv('accent') * .08;
+const bpm = () => { const b = G && G.tr ? G.tr.bpm : 108; return Math.min(b + 68, b + meta('tempo') * 4 + pv('tempo') * 8); };
+const xpNeed = L => Math.floor(1.1 * L * L + 2 * L + 1);   // 4, 9, 16, 26, 38 ... quick first level-ups hook the player
+
+/* ================= Spawning ================= */
+function spawnEnemy(kind, x, y, elite = false){
+  if (G.enemies.length >= MAX_ENEMIES && kind !== 'boss') return;
+  const d = ENEMIES[kind], hpMul = (1 + G.t / 90) * G.tr.hp;
+  if (x === undefined){
+    const a = rng() * TAU, dist = viewR() + 50;
+    x = G.P.x + Math.cos(a) * dist; y = G.P.y + Math.sin(a) * dist;
+  }
+  const hp = d.hp * hpMul * (elite ? 8 : 1) * (kind === 'boss' ? 1 + G.bosses * 1.5 : 1);
+  G.enemies.push({ kind, x, y, r: d.r * (elite ? 1.6 : 1), hp, maxHp: hp, spd: d.spd * (elite ? .9 : 1) * G.tr.spd, dmg: d.dmg * (elite ? 1.2 : 1), xp: d.xp * (elite ? 10 : 1),
+                   color: kind === 'boss' ? G.tr.boss.color : elite ? '#ffe14d' : d.color, elite, boss: kind === 'boss', flash: 0, kx: 0, ky: 0, orbCd: 0, shootCd: 2 + rng() * 2, wob: rng() * TAU });
+}
+function director(dt){
+  const t = G.t;
+  const rate = Math.min(24, .8 + t / 25 + (t / 120) ** 2);
+  const cap = Math.min(MAX_ENEMIES, 40 + t * .8);
+  G.spawnAcc += dt * rate;
+  while (G.spawnAcc >= 1){
+    G.spawnAcc--;
+    if (G.enemies.length >= cap) continue;
+    const kind = G.tr.kind(t, rng());
+    spawnEnemy(kind, undefined, undefined, t > 60 && rng() < .006);
+  }
+  if (t >= G.nextBoss){ G.nextBoss += 300; spawnEnemy('boss'); G.bosses++; banner(G.tr.boss.name); Sound.crash(1.2); }
+}
+// every minute, on a bar line, the Silence drops a ring of enemies around you
+function drop(){
+  const n = Math.min(40, 14 + Math.floor(G.t / 15)), R = 330;
+  for (let k = 0; k < n; k++){ const a = k / n * TAU; spawnEnemy(G.t > 150 && k % 3 === 0 ? 'glitch' : 'static', G.P.x + Math.cos(a) * R, G.P.y + Math.sin(a) * R); }
+  G.dropAt = G.t; banner('THE DROP'); G.flash = .45; G.shake = Math.max(G.shake, 10); Sound.crash(1); buzz(60);
+  tip('drop', 'Every minute the Silence drops a ring. Keep moving!');
+}
+function banner(text){ G.bannerText = text; G.dropBanner = 2.2; }
+// a short buzz on phones for big moments (only after the player has touched the page)
+function buzz(ms){ if (save.muted) return; try { if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(ms); } catch(e){} }
+// first-run tips, each shown once, only to players who haven't finished a run yet
+function tip(id, text, life = 4.5){ if (!G || save.tutorialDone || G.tipsShown[id]) return; G.tipsShown[id] = true; G.tip = { text, life, max: life }; }
+
+/* ================= Combat ================= */
+let lastPop = 0;
+function hit(e, dmg, nx = 0, ny = 0, knock = 0){
+  if (e.dead) return;
+  const crit = rngFx() < critChance();
+  const d = Math.max(1, Math.round(dmg * dmgMult() * (crit ? 2 : 1)));
+  e.hp -= d; e.flash = .09;
+  if (knock && !e.boss){ e.kx += nx * knock * (e.elite ? .3 : 1); e.ky += ny * knock * (e.elite ? .3 : 1); }
+  if (G.texts.length < 45) G.texts.push({ x: e.x + (Math.random() - .5) * 10, y: e.y - e.r, v: d, crit, life: .7 });
+  if (e.hp <= 0) kill(e);
+}
+function kill(e){
+  e.dead = true; G.kills++;
+  const n = e.boss ? 40 : e.elite ? 18 : 6;
+  for (let i = 0; i < n; i++){ const a = Math.random() * TAU, s = 60 + Math.random() * 220; G.parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: .35 + Math.random() * .35, c: e.color, s: 2 + Math.random() * 3 }); }
+  dropGem(e.x, e.y, e.xp * (1 + G.t / 300));     // later enemies are worth more, so levels keep coming
+  mis('total', 1, true); mis('kills', G.kills);
+  if (e.boss) mis('boss', 1, true); else if (e.elite) mis('elite', 1, true);
+  if (e.boss){ G.shake = 22; G.flash = .6; G.hitStop = .16; G.vinylBonus += 15; G.P.hp = Math.min(maxHp(), G.P.hp + 40); G.pendingLevels += 1; banner('SILENCED'); Sound.crash(1.4); buzz(120); }
+  else if (e.elite){ G.vinylBonus += 3; G.P.hp = Math.min(maxHp(), G.P.hp + 20); G.shake = Math.max(G.shake, 8); G.hitStop = Math.max(G.hitStop, .06); buzz(30); }
+  else if (rngFx() < .012) G.gems.push({ x: e.x, y: e.y, v: 0, heal: 20 });
+  G.combo++; G.comboT = 1.2; G.streak++; mis('streak', G.streak);
+  if (G.streak >= G.nextStreak){ banner(`${G.nextStreak} STREAK!`); Sound.streak(Math.log2(G.nextStreak / 50)); G.nextStreak *= 2; buzz(40); }
+  const now = performance.now(); if (now - lastPop > 45){ lastPop = now; Sound.pop(G.combo); }
+}
+function dropGem(x, y, v){
+  if (G.gems.length >= MAX_GEMS){ let best = G.gems[0], bd = 1e18; for (const g of G.gems){ if (g.heal) continue; const d = (g.x - x) ** 2 + (g.y - y) ** 2; if (d < bd){ bd = d; best = g; } } best.v += v; return; }
+  G.gems.push({ x: x + (rngFx() - .5) * 8, y: y + (rngFx() - .5) * 8, v, heal: 0 });
+}
+
+/* ================= The beat: weapons fire on 16th notes ================= */
+function onStep(s){
+  const TR = G.tr, step = s % 16, bar = Math.floor(s / 16), chord = TR.chords[bar % 4];
+  if (step % 4 === 0){ G.pulse = 1; }
+  // the track's own quiet groove under everything
+  if (TR.kick.includes(step) && !lv('kick')) Sound.kick(.35);
+  if (TR.snare.includes(step) && !lv('snare')) Sound.snare(.35);
+  if (TR.hat.includes(step)) Sound.hat(TR.hatV);
+  if (TR.crackle && Math.random() < .5) Sound.crackle();
+  if (step === 0) Sound.pad(chord);
+  if (step === 0 && bar > 0 && G.t >= G.nextDrop){ G.nextDrop += 60; drop(); }
+  // every 4 bars the crowd throws you everything on screen, so XP never gets stranded in the horde
+  if (step === 0 && bar % 4 === 0 && bar > 0){
+    const R = viewR(); let n = 0;
+    for (const g of G.gems) if (!g.heal && (g.x - G.P.x) ** 2 + (g.y - G.P.y) ** 2 < R * R){ g.pull = true; n++; }
+    if (n > 3){ G.surf = .6; Sound.pluck(TR.chords[0][2] + 12, 1.4); }
+  }
+
+  const P = G.P;
+  for (const id in G.weapons){
+    const L = G.weapons[id], W = WEAPONS[id], S = WSTAT[id];
+    if (!W.steps(L).includes(step)) continue;
+    if (id === 'snare'){
+      const targets = [];
+      const t1 = nearest(P.x, P.y, 460); if (t1) targets.push(t1);
+      if (S.count[L - 1] > 1){ let t2 = null, bd = 1e12; query(P.x, P.y, 460, e => { if (e === t1) return; const d = (e.x - P.x) ** 2 + (e.y - P.y) ** 2; if (d < bd){ bd = d; t2 = e; } }); if (t2) targets.push(t2); }
+      for (const t of targets){
+        const dx = t.x - P.x, dy = t.y - P.y, d = Math.hypot(dx, dy) || 1;
+        G.shots.push({ x: P.x, y: P.y, vx: dx / d * 620, vy: dy / d * 620, r: 6, dmg: S.dmg[L - 1], pierce: S.pierce[L - 1], life: .9, c: W.color, hitSet: new Set() });
+      }
+      if (targets.length) Sound.snare(.9);
+    } else if (id === 'kick'){
+      G.rings.push({ x: P.x, y: P.y, r: 10, max: S.r[L - 1] * area(), dmg: S.dmg[L - 1], knock: S.knock[L - 1], c: W.color, life: 1, hitSet: new Set(), follow: true });
+      Sound.kick(1); G.shake = Math.max(G.shake, 3);
+    } else if (id === 'hats'){
+      const n = S.count[L - 1], base = Math.atan2(P.fy, P.fx);
+      for (let k = 0; k < n; k++){
+        const a = base + (k - (n - 1) / 2) * .22 + (rngFx() - .5) * .1;
+        G.shots.push({ x: P.x, y: P.y, vx: Math.cos(a) * 640, vy: Math.sin(a) * 640, r: 4, dmg: S.dmg[L - 1], pierce: 0, life: .42, c: W.color, hitSet: new Set() });
+      }
+      Sound.hat(1);
+    } else if (id === 'bass'){
+      G.orbFlash = 1; Sound.bass(chord[0] + (step === 10 ? 7 : 0));
+    } else if (id === 'arp'){
+      const len = S.len[L - 1] * area();
+      const t = randomEnemyNear(P.x, P.y, len);
+      const a = t ? Math.atan2(t.y - P.y, t.x - P.x) : rngFx() * TAU;
+      fireBeam(P.x, P.y, a, len, S.dmg[L - 1], W.color);
+      Sound.pluck(chord[(step >> 1) % 3] + (step >= 8 ? 12 : 0));
+    } else if (id === 'crash'){
+      if (bar % S.every[L - 1] !== 0) continue;
+      G.rings.push({ x: P.x, y: P.y, r: 20, max: S.r[L - 1] * area(), dmg: S.dmg[L - 1], knock: 320, c: W.color, life: 1, hitSet: new Set(), follow: false, thick: true });
+      Sound.crash(1); G.shake = Math.max(G.shake, 8); G.flash = Math.max(G.flash, .25);
+    }
+  }
+}
+function randomEnemyNear(x, y, r){
+  const list = []; query(x, y, r, e => { if ((e.x - x) ** 2 + (e.y - y) ** 2 < r * r) list.push(e); });
+  return list.length ? list[Math.floor(rngFx() * list.length)] : null;
+}
+function fireBeam(x, y, a, len, dmg, c){
+  const ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len, w = 12 * area();
+  G.beams.push({ x, y, ex, ey, c, life: .16, w });
+  const mx = (x + ex) / 2, my = (y + ey) / 2, ux = Math.cos(a), uy = Math.sin(a);
+  query(mx, my, len / 2 + 30, e => {
+    const rx = e.x - x, ry = e.y - y, along = rx * ux + ry * uy;
+    if (along < 0 || along > len) return;
+    if (Math.abs(rx * uy - ry * ux) < e.r + w / 2) hit(e, dmg, ux, uy, 40);
+  });
+}
+
+/* ================= Update ================= */
+let input = { x: 0, y: 0 }, keys = {}, joy = null, botInput = null;
+function update(dt){
+  const P = G.P;
+  // hit-stop: the world freezes for a few frames; the music clock keeps counting so the beat never slips
+  if (G.hitStop > 0){ G.hitStop = Math.max(0, G.hitStop - dt); G.stepAcc += dt; G.shake *= Math.pow(.02, dt); return; }
+  // near death: a moment of slow motion (the music slows down with it, like a record dragging)
+  if (G.slowMo > 0){ G.slowMo = Math.max(0, G.slowMo - dt); dt *= .4; }
+  G.comboT -= dt; if (G.comboT <= 0) G.combo = 0;
+  if (G.tip){ G.tip.life -= dt; if (G.tip.life <= 0) G.tip = null; }
+  if (G.t > 1 && G.t < 2) tip('beat', 'Your weapons fire on the beat. Just move!');
+  if (G.gems.length && G.level === 1 && G.t > 6) tip('gems', 'Grab the glowing gems to level up');
+  G.t += dt;
+  // mission progress that depends on time, checked a few times a second
+  G.misT -= dt;
+  if (G.misT <= 0){
+    G.misT = .25; mis('survive', G.t); mis('level', G.level); mis('clean', G.t - G.lastHurtT);
+    if (G.dropAt >= 0 && G.t - G.dropAt > 8){ G.dropAt = -1; G.drops++; mis('drops', G.drops); }    // you got through it
+  }
+
+  // music clock
+  G.stepAcc += dt;
+  const stepDur = 60 / bpm() / 4;
+  while (G.stepAcc >= stepDur){ G.stepAcc -= stepDur; onStep(G.step++); }
+  G.pulse = Math.max(0, G.pulse - dt * 5);
+
+  // movement
+  let mx = 0, my = 0;
+  if (botInput){ mx = botInput.x; my = botInput.y; }
+  else {
+    if (keys.ArrowLeft || keys.KeyA) mx--; if (keys.ArrowRight || keys.KeyD) mx++;
+    if (keys.ArrowUp || keys.KeyW) my--; if (keys.ArrowDown || keys.KeyS) my++;
+    if (joy && joy.active){ mx = joy.dx; my = joy.dy; }
+  }
+  const m = Math.hypot(mx, my);
+  if (m > 0){ const k = Math.min(1, m) / m; mx *= k; my *= k; P.fx = mx; P.fy = my; const n = Math.hypot(P.fx, P.fy); P.fx /= n; P.fy /= n; }
+  P.x += mx * moveSpeed() * dt; P.y += my * moveSpeed() * dt;
+  P.inv = Math.max(0, P.inv - dt);
+
+  director(dt);
+  gridBuild();
+
+  // enemies
+  for (const e of G.enemies){
+    if (e.dead) continue;
+    const dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy) || 1;
+    let sp = e.spd;
+    if (e.kind === 'spitter'){
+      if (d < 240) sp = -e.spd * .7;
+      e.shootCd -= dt;
+      if (e.shootCd <= 0 && d < 420){ e.shootCd = 2.6; G.foes.push({ x: e.x, y: e.y, vx: dx / d * 170, vy: dy / d * 170, r: 6, dmg: 9, life: 4 }); }
+    }
+    if (e.boss){
+      e.shootCd -= dt;
+      if (e.shootCd <= 0){ const B = G.tr.boss; e.shootCd = B.cd; const n = B.n; for (let k = 0; k < n; k++){ const a = k / n * TAU + G.t; G.foes.push({ x: e.x, y: e.y, vx: Math.cos(a) * B.spd, vy: Math.sin(a) * B.spd, r: 8, dmg: 14, life: 5 }); } }
+    }
+    e.x += (dx / d * sp + e.kx) * dt; e.y += (dy / d * sp + e.ky) * dt;
+    e.kx *= Math.pow(.02, dt); e.ky *= Math.pow(.02, dt);
+    e.flash = Math.max(0, e.flash - dt); e.orbCd = Math.max(0, e.orbCd - dt);
+    // keep the horde from stacking into one blob
+    query(e.x, e.y, e.r * 2, o => {
+      if (o === e) return;
+      const ox = e.x - o.x, oy = e.y - o.y, od = Math.hypot(ox, oy), min = e.r + o.r;
+      if (od > 0 && od < min){ const push = (min - od) * .5; e.x += ox / od * push; e.y += oy / od * push; }
+    });
+    // touching you hurts
+    if (d < e.r + P.r && P.inv <= 0 && !G.dead){ hurt(e.dmg, e.kind); }
+    // far behind? bring it back around (keeps pressure without wasting enemies)
+    if (d > viewR() * 1.8 && !e.boss){ const a = rngFx() * TAU, R = viewR() + 40; e.x = P.x + Math.cos(a) * R; e.y = P.y + Math.sin(a) * R; }
+  }
+
+  // bass orbs
+  if (lv('bass')){
+    const L = lv('bass'), S = WSTAT.bass, n = S.count[L - 1], R = S.r[L - 1] * area();
+    G.orbAng += dt * (2.4 + G.orbFlash * 3);
+    G.orbFlash = Math.max(0, G.orbFlash - dt * 3);
+    for (let k = 0; k < n; k++){
+      const a = G.orbAng + k / n * TAU, ox = P.x + Math.cos(a) * R, oy = P.y + Math.sin(a) * R, orr = 13 * area() * (1 + G.orbFlash * .4);
+      query(ox, oy, orr + 20, e => {
+        if (e.orbCd > 0) return;
+        if ((e.x - ox) ** 2 + (e.y - oy) ** 2 < (e.r + orr) ** 2){ e.orbCd = .35; const nx = (e.x - P.x), ny = (e.y - P.y), nd = Math.hypot(nx, ny) || 1; hit(e, S.dmg[L - 1] * (1 + G.orbFlash * .5), nx / nd, ny / nd, 90); }
+      });
+    }
+  }
+
+  // shots
+  for (const s of G.shots){
+    s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
+    if (s.life <= 0) continue;
+    query(s.x, s.y, s.r + 30, e => {
+      if (s.life <= 0 || s.hitSet.has(e)) return;
+      if ((e.x - s.x) ** 2 + (e.y - s.y) ** 2 < (e.r + s.r) ** 2){
+        s.hitSet.add(e); const sp = Math.hypot(s.vx, s.vy); hit(e, s.dmg, s.vx / sp, s.vy / sp, 60);
+        if (s.pierce-- <= 0) s.life = 0;
+      }
+    });
+  }
+  G.shots = G.shots.filter(s => s.life > 0);
+
+  // rings (kick, crash)
+  for (const r of G.rings){
+    if (r.follow){ r.x = P.x; r.y = P.y; }
+    const prev = r.r; r.r += (r.max - r.r) * Math.min(1, dt * 14) + 60 * dt; r.life -= dt * 3.2;
+    if (r.dmg) query(r.x, r.y, r.r + 20, e => {
+      if (r.hitSet.has(e)) return;
+      const d = Math.hypot(e.x - r.x, e.y - r.y);
+      if (d < r.r + e.r){ r.hitSet.add(e); hit(e, r.dmg, (e.x - r.x) / (d || 1), (e.y - r.y) / (d || 1), r.knock); }
+    });
+    if (r.r >= r.max) r.r = r.max;
+  }
+  G.rings = G.rings.filter(r => r.life > 0);
+  for (const b of G.beams) b.life -= dt;
+  G.beams = G.beams.filter(b => b.life > 0);
+
+  // enemy bullets
+  for (const f of G.foes){
+    f.x += f.vx * dt; f.y += f.vy * dt; f.life -= dt;
+    if (f.life > 0 && (f.x - P.x) ** 2 + (f.y - P.y) ** 2 < (f.r + P.r) ** 2 && P.inv <= 0 && !G.dead){ hurt(f.dmg, 'bullet'); f.life = 0; }
+  }
+  G.foes = G.foes.filter(f => f.life > 0);
+
+  // gems
+  const mr = magnetR();
+  for (const g of G.gems){
+    const dx = P.x - g.x, dy = P.y - g.y, d = Math.hypot(dx, dy);
+    if (g.pull || d < mr){ g.pull = true; const sp = 420 + (g.sp = (g.sp || 0) + dt * 900); g.x += dx / (d || 1) * sp * dt; g.y += dy / (d || 1) * sp * dt; }
+    if (d < P.r + 8){
+      g.got = true;
+      if (g.heal){ P.hp = Math.min(maxHp(), P.hp + g.heal); }
+      else { G.xp += g.v * (1 + meta('xp') * .08); Sound.gem(); }
+    }
+  }
+  G.gems = G.gems.filter(g => !g.got);
+  while (G.xp >= xpNeed(G.level)){ G.xp -= xpNeed(G.level); G.level++; G.pendingLevels++;
+    // a punch before the level-up screen: freeze, a white ring, a buzz
+    G.hitStop = Math.max(G.hitStop, .1); G.rings.push({ x: P.x, y: P.y, r: 14, max: 150, dmg: 0, knock: 0, c: '#3df2ff', life: .8, hitSet: new Set(), follow: true }); buzz(25); }
+
+  // fx
+  for (const p of G.parts){ p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .9; p.vy *= .9; p.life -= dt; }
+  G.parts = G.parts.filter(p => p.life > 0);
+  if (G.parts.length > 500) G.parts.splice(0, G.parts.length - 500);
+  for (const t of G.texts){ t.y -= 40 * dt; t.life -= dt; }
+  G.texts = G.texts.filter(t => t.life > 0);
+  G.shake *= Math.pow(.004, dt); G.flash = Math.max(0, G.flash - dt * 1.6); G.surf = Math.max(0, (G.surf || 0) - dt); G.dropBanner = Math.max(0, G.dropBanner - dt);
+  G.enemies = G.enemies.filter(e => !e.dead);
+
+  if (!G.won && G.t >= TRACK_LEN){ G.won = true; onWin(); return; }
+  if (G.pendingLevels > 0 && screen === 'play' && !G.dead && G.hitStop <= 0) openLevelUp();
+}
+function hurt(d, src = '?'){
+  const P = G.P; G.lastHurtT = G.t; P.hp -= d; G.hurtLog = G.hurtLog || {}; G.hurtLog[src] = (G.hurtLog[src] || 0) + d; P.inv = .6;
+  // a defensive thump: shove whatever is touching you, so you can't be pinned and drained
+  query(P.x, P.y, 90, e => { const dx = e.x - P.x, dy = e.y - P.y, dd = Math.hypot(dx, dy) || 1; if (dd < 90){ const k = e.boss ? 120 : 300; e.kx += dx / dd * k; e.ky += dy / dd * k; } });
+  G.rings.push({ x: P.x, y: P.y, r: 10, max: 90, dmg: 0, knock: 0, c: '#ff3d71', life: .6, hitSet: new Set(), follow: true }); G.shake = Math.max(G.shake, Math.min(16, 4 + d * .5)); Sound.hurt();
+  buzz(40); G.streak = 0; G.nextStreak = 50;
+  if (P.hp > 0 && P.hp / maxHp() < .2 && !G.nearDeathDone){ G.nearDeathDone = true; G.slowMo = .9; Sound.slow(); buzz(120); tip('low', 'Low health! Pink hearts heal you'); }
+  if (P.hp <= 0){ P.hp = 0; G.dead = true; onDeath(); }
+}
+
+/* ================= Drawing ================= */
+// can this browser run the 3D world? (if not, or if it fails to load, the 2D one is drawn instead)
+const WANT_3D = (() => { try { return !!document.createElement('canvas').getContext('webgl2'); } catch(e){ return false; } })();
+let failed3D = false;
+addEventListener('world3dfail', () => { failed3D = true; });
+// where the bass orbs are this frame (shared by the 2D and 3D drawing)
+function orbs(){
+  if (!G || !lv('bass')) return [];
+  const Lb = lv('bass'), n = WSTAT.bass.count[Lb - 1], R2 = WSTAT.bass.r[Lb - 1] * area(), orr = 13 * area() * (1 + G.orbFlash * .4), out = [];
+  for (let k = 0; k < n; k++){ const a = G.orbAng + k / n * TAU; out.push({ x: G.P.x + Math.cos(a) * R2, y: G.P.y + Math.sin(a) * R2, r: orr }); }
+  return out;
+}
+function draw(){
+  const W3 = window.World3D;
+  if (W3){
+    // 3D: the floor, you, the Silence and the weapons are drawn by three.js; this canvas keeps numbers, bars and the HUD
+    W3.render(performance.now() / 1000);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cvs.width, cvs.height);
+    if (!G) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const P = G.P;
+    // the boss's health bar and yours, over the 3D figures
+    for (const e of G.enemies){ if (!e.boss) continue; const q = W3.project(e.x, e.y, e.r * 2.4), w = 110; ctx.fillStyle = 'rgba(0,0,0,.6)'; rr(q.x - w / 2, q.y - 10, w, 8, 4); ctx.fill(); ctx.fillStyle = '#ff3d71'; rr(q.x - w / 2, q.y - 10, Math.max(8, w * Math.max(0, e.hp / e.maxHp)), 8, 4); ctx.fill(); }
+    { const q = W3.project(P.x, P.y, 0), hpw = 44; ctx.fillStyle = 'rgba(0,0,0,.6)'; rr(q.x - hpw / 2, q.y + 18, hpw, 7, 3.5); ctx.fill();
+      ctx.fillStyle = P.hp / maxHp() < .3 ? '#ff3d71' : '#4dff8a'; rr(q.x - hpw / 2, q.y + 18, Math.max(5, hpw * clamp(P.hp / maxHp(), 0, 1)), 7, 3.5); ctx.fill(); }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    for (const t of G.texts){
+      const q = W3.project(t.x, t.y, 20); ctx.globalAlpha = Math.min(1, t.life * 2);
+      ctx.font = `900 ${t.crit ? 19 : 13}px ui-rounded,system-ui,sans-serif`; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,6,20,.7)'; ctx.strokeText(t.v, q.x, q.y); ctx.fillStyle = t.crit ? '#ffe14d' : '#fff'; ctx.fillText(t.v, q.x, q.y);
+    }
+    ctx.globalAlpha = 1;
+    return drawHud(P, G.pulse);
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (WANT_3D && !failed3D && performance.now() < 4000){ ctx.fillStyle = '#07051a'; ctx.fillRect(0, 0, cvs.width, cvs.height); return; }
+  const bgImg = backdropImg();
+  if (bgImg){ ctx.fillStyle = '#06041a'; ctx.fillRect(0, 0, cvs.width, cvs.height); ctx.globalAlpha = G ? .5 : 1; ctx.drawImage(bgImg, 0, 0); ctx.globalAlpha = 1; } else { ctx.fillStyle = '#07051a'; ctx.fillRect(0, 0, cvs.width, cvs.height); }
+  const cx = G ? G.P.x : performance.now() * .03, cy = G ? G.P.y : 0;
+  const s = scale * dpr, sh = G ? G.shake : 0;
+  const ox = VW / 2 * dpr + (Math.random() - .5) * sh * dpr, oy = VH / 2 * dpr + (Math.random() - .5) * sh * dpr;
+  ctx.setTransform(s, 0, 0, s, ox - cx * s, oy - cy * s);
+  const hw = VW / 2 / scale + 60, hh = VH / 2 / scale + 60;
+  const L = cx - hw, R = cx + hw, T = cy - hh, B = cy + hh;
+
+  // pulsing dance floor
+  const pulse = G ? G.pulse : (Math.sin(performance.now() / 280) * .5 + .5) * .6;
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = `rgba(120,140,255,${.07 + pulse * .1})`;
+  ctx.beginPath();
+  for (let x = Math.floor(L / 64) * 64; x < R; x += 64){ ctx.moveTo(x, T); ctx.lineTo(x, B); }
+  for (let y = Math.floor(T / 64) * 64; y < B; y += 64){ ctx.moveTo(L, y); ctx.lineTo(R, y); }
+  ctx.stroke();
+  if (!G){ drawMenuArt(performance.now() / 1000); return; }
+  const P = G.P;
+
+  // gems
+  for (const g of G.gems){
+    if (g.x < L || g.x > R || g.y < T || g.y > B) continue;
+    if (g.heal){ ctx.font = '16px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('💖', g.x, g.y); continue; }
+    const c = g.v >= 20 ? '#ff3df2' : g.v >= 4 ? '#ffe14d' : '#3df2ff', z = g.v >= 20 ? 8 : g.v >= 4 ? 6 : 4.5;
+    ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(glow(c, 24), g.x - z * 2.4, g.y - z * 2.4, z * 4.8, z * 4.8); ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(g.x, g.y - z); ctx.lineTo(g.x + z * .7, g.y); ctx.lineTo(g.x, g.y + z); ctx.lineTo(g.x - z * .7, g.y); ctx.fill();
+  }
+
+  // enemies bounce to the beat
+  const bounce = 1 + pulse * .1;
+  ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .55;
+  for (const e of G.enemies){ if (e.x < L - 50 || e.x > R + 50 || e.y < T - 50 || e.y > B + 50) continue; const gr = e.r * bounce * 2.3; ctx.drawImage(glow(e.color, 32), e.x - gr, e.y - gr, gr * 2, gr * 2); }
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  for (const e of G.enemies){
+    if (e.x < L - 50 || e.x > R + 50 || e.y < T - 50 || e.y > B + 50) continue;
+    const r = e.r * bounce;
+    ctx.fillStyle = e.flash > 0 ? '#ffffff' : e.color;
+    ctx.beginPath();
+    if (e.kind === 'glitch'){ rr(e.x - r, e.y - r, r * 2, r * 2, r * .35); }
+    else if (e.kind === 'brick'){ rr(e.x - r, e.y - r * .8, r * 2, r * 1.6, r * .3); }
+    else if (e.kind === 'spitter'){ for (let k = 0; k < 3; k++){ const a = k / 3 * TAU - Math.PI / 2; ctx[k ? 'lineTo' : 'moveTo'](e.x + Math.cos(a) * r * 1.2, e.y + Math.sin(a) * r * 1.2); } ctx.closePath(); }
+    else ctx.arc(e.x, e.y, r, 0, TAU);
+    ctx.fill();
+    if (e.elite || e.boss){ ctx.strokeStyle = e.boss ? '#ff3d71' : '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
+    if (!e.flash){ ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.beginPath(); ctx.ellipse(e.x - r * .3, e.y - r * .45, r * .35, r * .18, -.4, 0, TAU); ctx.fill(); }
+    // eyes, always watching you
+    const dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy) || 1, ex = dx / d * r * .3, ey = dy / d * r * .3;
+    ctx.fillStyle = e.boss ? '#ff3d71' : '#07060f';
+    const er = Math.max(1.6, r * .16);
+    ctx.beginPath(); ctx.arc(e.x + ex - r * .28, e.y + ey - r * .1, er, 0, TAU); ctx.arc(e.x + ex + r * .28, e.y + ey - r * .1, er, 0, TAU); ctx.fill();
+    if (e.boss){ const w = 90; ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(e.x - w / 2, e.y - r - 18, w, 7); ctx.fillStyle = '#ff3d71'; ctx.fillRect(e.x - w / 2, e.y - r - 18, w * Math.max(0, e.hp / e.maxHp), 7); }
+  }
+
+  ctx.globalCompositeOperation = 'lighter';
+  for (const f of G.foes){ ctx.drawImage(glow('#ff3d71', 24), f.x - f.r * 2.2, f.y - f.r * 2.2, f.r * 4.4, f.r * 4.4); }
+  for (const r of G.rings){
+    ctx.strokeStyle = r.c; ctx.globalAlpha = Math.max(0, r.life) * (r.thick ? .9 : .7);
+    ctx.lineWidth = (r.thick ? 14 : 6) * Math.max(.2, r.life);
+    ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, TAU); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  for (const b of G.beams){
+    ctx.strokeStyle = b.c; ctx.globalAlpha = b.life / .16; ctx.lineWidth = b.w * (b.life / .16) + 2;
+    ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.ex, b.ey); ctx.stroke();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  for (const s of G.shots){
+    ctx.drawImage(glow(s.c, 24), s.x - s.r * 3, s.y - s.r * 3, s.r * 6, s.r * 6);
+    ctx.strokeStyle = s.c; ctx.lineWidth = s.r * .9; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * .025, s.y - s.vy * .025); ctx.stroke();
+  }
+  for (const o of orbs()) ctx.drawImage(glow('#ff3df2', 32), o.x - o.r * 2.4, o.y - o.r * 2.4, o.r * 4.8, o.r * 4.8);
+  for (const p of G.parts){ ctx.globalAlpha = Math.min(1, p.life * 2.5); ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.s, p.s); }
+  ctx.globalAlpha = 1;
+  // you: a speaker pumping to the beat
+  ctx.drawImage(glow('#3df2ff', 48), P.x - 48 - pulse * 14, P.y - 48 - pulse * 14, 96 + pulse * 28, 96 + pulse * 28);
+  ctx.globalCompositeOperation = 'source-over';
+  // pickup range: a faint ring that breathes with the beat
+  ctx.strokeStyle = `rgba(160,140,255,${.12 + pulse * .1})`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(P.x, P.y, magnetR() * .75, 0, TAU); ctx.stroke();
+  const hitFlash = P.inv > 0 && Math.floor(P.inv * 20) % 2, pr = P.r * 1.25 * (1 + pulse * .12);
+  const ringG = ctx.createLinearGradient(P.x - pr, P.y - pr, P.x + pr, P.y + pr); ringG.addColorStop(0, hitFlash ? '#ff3d71' : '#3df2ff'); ringG.addColorStop(1, hitFlash ? '#ff3d71' : '#a46bff');
+  ctx.fillStyle = '#0d0b18'; ctx.beginPath(); ctx.arc(P.x, P.y, pr, 0, TAU); ctx.fill();
+  ctx.strokeStyle = ringG; ctx.lineWidth = pr * .3; ctx.beginPath(); ctx.arc(P.x, P.y, pr * .88, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(P.x, P.y, pr * .55, G.t * 6, G.t * 6 + 1.2); ctx.stroke();
+  ctx.fillStyle = '#3df2ff'; ctx.beginPath(); ctx.arc(P.x + P.fx * 3, P.y + P.fy * 3, P.r * .3 * (1 + pulse * .5), 0, TAU); ctx.fill();
+  ctx.fillStyle = '#0d0b18'; ctx.beginPath(); ctx.arc(P.x + P.fx * 3, P.y + P.fy * 3, P.r * .09, 0, TAU); ctx.fill();
+  // health under you
+  const hpw = 38; ctx.fillStyle = 'rgba(0,0,0,.6)'; rr(P.x - hpw / 2, P.y + P.r + 8, hpw, 6, 3); ctx.fill();
+  ctx.fillStyle = P.hp / maxHp() < .3 ? '#ff3d71' : '#4dff8a'; rr(P.x - hpw / 2, P.y + P.r + 8, Math.max(4, hpw * clamp(P.hp / maxHp(), 0, 1)), 6, 3); ctx.fill();
+
+  // damage numbers
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const t of G.texts){
+    ctx.globalAlpha = Math.min(1, t.life * 2); ctx.fillStyle = t.crit ? '#ffe14d' : '#fff';
+    ctx.font = `900 ${t.crit ? 17 : 12}px ui-rounded,system-ui,sans-serif`; ctx.fillText(t.v, t.x, t.y);
+  }
+  ctx.globalAlpha = 1;
+
+  drawHud(P, pulse);
+}
+function drawHud(P, pulse){
+  // ---- screen-space HUD ----
+  if (COVER) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (G.flash > 0){ ctx.fillStyle = `rgba(255,255,255,${G.flash * .25})`; ctx.fillRect(0, 0, VW, VH); }
+  if (G.surf > 0){ ctx.strokeStyle = `rgba(61,242,255,${G.surf})`; ctx.lineWidth = 10 * G.surf; ctx.strokeRect(0, 0, VW, VH); }
+  if (P.hp / maxHp() < .3){ const g = ctx.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * .35, VW / 2, VH / 2, Math.max(VW, VH) * .7); g.addColorStop(0, 'rgba(255,61,113,0)'); g.addColorStop(1, `rgba(255,61,113,${.25 + pulse * .15})`); ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH); }
+  // top left: level and its XP bar, kills, the band you have
+  const top = 10;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.font = `900 24px ${FONT}`;
+  ctx.fillText(`Lv ${G.level}`, 14, top + 16);
+  const lvW = ctx.measureText(`Lv ${G.level}`).width, bx = 22 + lvW, bw = Math.max(40, Math.min(150, VW / 2 - 52 - bx));   // never runs under the clock
+  ctx.fillStyle = 'rgba(255,255,255,.12)'; rr(bx, top + 11, bw, 9, 4.5); ctx.fill();
+  const xg = ctx.createLinearGradient(bx, 0, bx + bw, 0); xg.addColorStop(0, '#3df2ff'); xg.addColorStop(1, '#4d8bff');
+  ctx.fillStyle = xg; rr(bx, top + 11, Math.max(9, bw * clamp(G.xp / xpNeed(G.level), 0, 1)), 9, 4.5); ctx.fill();
+  vinylIcon(26, top + 46, 11); ctx.fillStyle = '#fff'; ctx.font = `900 19px ${FONT}`; ctx.fillText(String(G.kills), 44, top + 47);
+  let wx = 14; ctx.textBaseline = 'alphabetic';
+  for (const id in G.weapons){ ctx.font = '18px serif'; ctx.fillStyle = '#fff'; ctx.fillText(WEAPONS[id].ic, wx, top + 82); ctx.font = `900 12px ${FONT}`; ctx.fillStyle = WEAPONS[id].color; ctx.fillText(G.weapons[id], wx + 21, top + 84); wx += 36; }
+  // top centre: clock, tempo, how far through the track
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.font = `900 30px ${FONT}`;
+  ctx.shadowColor = 'rgba(160,140,255,.6)'; ctx.shadowBlur = 10; ctx.fillText(fmtTime(G.t), VW / 2, top + 18); ctx.shadowBlur = 0;
+  ctx.font = `800 13px ${FONT}`; ctx.fillStyle = '#d8d2ff'; ctx.fillText(`${Math.round(bpm())} BPM · ${G.tr.name}`, VW / 2, top + 42);
+  if (!G.won){ const w = Math.min(220, VW * .44); ctx.fillStyle = 'rgba(255,255,255,.12)'; rr(VW / 2 - w / 2, top + 56, w, 5, 2.5); ctx.fill(); const pg = ctx.createLinearGradient(VW / 2 - w / 2, 0, VW / 2 + w / 2, 0); pg.addColorStop(0, '#ff3df2'); pg.addColorStop(1, '#a46bff'); ctx.fillStyle = pg; rr(VW / 2 - w / 2, top + 56, Math.max(5, w * G.t / TRACK_LEN), 5, 2.5); ctx.fill(); }
+  if (G.dropBanner > 0){
+    ctx.globalAlpha = Math.min(1, G.dropBanner); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `900 ${Math.round(Math.min(VW / 9, 54))}px ui-rounded,system-ui,sans-serif`;
+    { const pop = 1 + Math.max(0, G.dropBanner - 1.95) * 1.6; const fs = Math.round(Math.min(VW / 9, 54) * pop); ctx.font = `italic 900 ${fs}px ${FONT}`; const bwid = ctx.measureText(G.bannerText).width; if (bwid > VW * .92) ctx.font = `italic 900 ${Math.floor(fs * VW * .92 / bwid)}px ${FONT}`; }
+    const bg2 = ctx.createLinearGradient(VW * .2, 0, VW * .8, 0); bg2.addColorStop(0, '#3df2ff'); bg2.addColorStop(.5, '#a46bff'); bg2.addColorStop(1, '#ff3df2');
+    ctx.shadowColor = 'rgba(255,61,242,.8)'; ctx.shadowBlur = 18; ctx.fillStyle = bg2; ctx.fillText(G.bannerText, VW / 2, VH * .3); ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+  // waiting for the first touch: a pulsing hint under the player
+  if (G.waiting){
+    const t = performance.now() / 1000, a = .6 + Math.sin(t * 4) * .4, cy = VH / 2;
+    ctx.strokeStyle = `rgba(61,242,255,${.25 + a * .35})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(VW / 2, cy, 34 + Math.sin(t * 4) * 6, 0, TAU); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; const hint = 'Drag or use WASD to move'; let hs = Math.round(Math.min(26, VW / 13)); ctx.font = `900 ${hs}px ${FONT}`; const hw = ctx.measureText(hint).width; if (hw > VW * .9){ hs = Math.floor(hs * VW * .9 / hw); ctx.font = `900 ${hs}px ${FONT}`; }
+    ctx.globalAlpha = .55 + a * .45; ctx.shadowColor = 'rgba(61,242,255,.8)'; ctx.shadowBlur = 14; ctx.fillStyle = '#fff';
+    ctx.fillText(hint, VW / 2, cy + 76);
+    ctx.shadowBlur = 0; ctx.font = `700 ${Math.round(Math.min(16, VW / 24))}px ${FONT}`; ctx.fillStyle = '#d8d2ff';
+    ctx.fillText('The music starts when you move', VW / 2, cy + 108); ctx.globalAlpha = 1;
+  }
+  if (G.tip){
+    const k = Math.min(1, G.tip.life * 2, (G.tip.max - G.tip.life) * 4);
+    ctx.globalAlpha = k; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `800 ${Math.round(Math.min(18, VW / 22))}px ${FONT}`;
+    { const tw = ctx.measureText(G.tip.text).width; if (tw > VW * .84) ctx.font = `800 ${Math.floor(Math.min(18, VW / 22) * VW * .84 / tw)}px ${FONT}`; }   // fits a phone
+    const w = ctx.measureText(G.tip.text).width + 36, y = VH * .78;
+    rr(VW / 2 - w / 2, y - 20, w, 40, 20); ctx.fillStyle = 'rgba(10,8,30,.75)'; ctx.fill(); ctx.strokeStyle = 'rgba(61,242,255,.7)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.fillText(G.tip.text, VW / 2, y + 1); ctx.globalAlpha = 1;
+  }
+  drawPops();
+  if (G.combo >= 10){
+    const k = Math.min(1, G.comboT * 2); ctx.globalAlpha = k; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.font = `italic 900 ${Math.round(18 + Math.min(G.combo, 60) * .25)}px ${FONT}`; ctx.fillStyle = G.combo >= 40 ? '#ff3df2' : G.combo >= 20 ? '#ffe14d' : '#3df2ff';
+    ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12; ctx.fillText(`${G.combo} COMBO`, VW - 16, 86); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+  }
+  if (joy && joy.active){
+    ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(joy.ox, joy.oy, 50, 0, TAU); ctx.stroke();
+    ctx.fillStyle = 'rgba(61,242,255,.5)'; ctx.beginPath(); ctx.arc(joy.ox + joy.dx * 50, joy.oy + joy.dy * 50, 20, 0, TAU); ctx.fill();
+  }
+}
+
+/* ================= Level up ================= */
+function buildOffer(){
+  const pool = [];
+  const owned = Object.keys(G.weapons);
+  for (const id in WEAPONS){
+    const L = lv(id);
+    if (L >= WEAPONS[id].max) continue;
+    if (!L && owned.length >= 6) continue;
+    pool.push({ type: 'w', id, w: L ? 3 : 2 });
+  }
+  for (const id in PASSIVES) if (pv(id) < PASSIVES[id].max) pool.push({ type: 'p', id, w: 1.2 });
+  const pick = [];
+  while (pick.length < 3 && pool.length){
+    const tot = pool.reduce((a, o) => a + o.w, 0); let r = rngOffer() * tot, i = 0;
+    for (; i < pool.length; i++){ r -= pool[i].w; if (r <= 0) break; }
+    pick.push(pool.splice(Math.min(i, pool.length - 1), 1)[0]);
+  }
+  if (!pick.length) pick.push({ type: 'heal' });
+  return pick;
+}
+function openLevelUp(){
+  screen = 'lvl'; G.offer = buildOffer(); renderOffer(); show('lvl'); Sound.level();
+  $('lvlSub').textContent = save.tutorialDone ? 'Pick one' : 'Pick one: every weapon joins the band';
+}
+function renderOffer(){
+  $('lvlTitle').textContent = G.pendingLevels > 1 ? `LEVEL UP ×${G.pendingLevels}` : 'LEVEL UP';
+  $('choices').innerHTML = G.offer.map((o, i) => {
+    if (o.type === 'heal') return `<button class="choice" data-i="${i}"><span class="ic">💖</span><span><b>Encore snack</b><small>Heal 50 health</small></span></button>`;
+    const d = o.type === 'w' ? WEAPONS[o.id] : PASSIVES[o.id], L = o.type === 'w' ? lv(o.id) : pv(o.id);
+    const text = o.type === 'w' ? d.desc[L] : d.desc;
+    return `<button class="choice" data-i="${i}"><span class="ic">${d.ic}</span><span><b>${d.name}</b>${L ? `<span class="lv">Level ${L} → ${L + 1}</span>` : '<span class="new">NEW</span>'}<small>${text}</small></span></button>`;
+  }).join('');
+  $('rerollBtn').innerHTML = '<svg><use href="#i-again"/></svg><span class="tx">Reroll<small>' + (G.freeReroll ? '1 free per run' : 'Watch a short ad') + '</small></span>';
+  $('rerollBtn').className = G.freeReroll ? 'btn' : 'btn ad';
+}
+function choose(i){
+  const o = G.offer[i]; if (!o) return;
+  if (o.type === 'w') G.weapons[o.id] = lv(o.id) + 1;
+  else if (o.type === 'p'){ G.passives[o.id] = pv(o.id) + 1; if (o.id === 'heart') G.P.hp = Math.min(maxHp(), G.P.hp + 30); }
+  else G.P.hp = Math.min(maxHp(), G.P.hp + 50);
+  G.pendingLevels--;
+  mis('band', Object.keys(G.weapons).length); if (Object.values(G.weapons).some(L => L >= 5)) mis('maxw', 1);
+  if (G.pendingLevels > 0){ G.offer = buildOffer(); renderOffer(); return; }
+  screen = 'play'; show(null); last = performance.now();
+}
+async function reroll(){
+  if (G.freeReroll){ G.freeReroll = false; G.offer = buildOffer(); renderOffer(); return; }
+  if (await Portal.rewarded()){ G.offer = buildOffer(); renderOffer(); }
+}
+
+/* ================= Daily missions & login streak ================= */
+function ensureMissions(){
+  const k = dayKey();
+  if (save.mis && save.mis.day === k && Array.isArray(save.mis.ids)) return;
+  const r = mulberry32((dailyNumber() * 7919 + 1013) >>> 0), pool = MISSIONS.map(m => m.id), ids = [];
+  while (ids.length < 3){ const i = Math.floor(r() * pool.length); ids.push(pool.splice(i, 1)[0]); }
+  save.mis = { day: k, ids, prog: {}, done: {} };
+}
+const misDef = id => MISSIONS.find(m => m.id === id);
+// report progress: `add` counts up across runs today, otherwise it's the best value reached
+function mis(id, v, add = false){
+  const M = save.mis; if (!M || !M.ids.includes(id) || M.done[id]) return;
+  const cur = M.prog[id] || 0, nv = add ? cur + v : Math.max(cur, v); if (nv === cur) return;
+  M.prog[id] = nv;
+  const d = misDef(id);
+  if (nv >= d.goal){
+    M.done[id] = true; save.vinyl += d.pay; persist();
+    if (G) G.misDone.push(id);
+    pushPop('MISSION COMPLETE', `${d.text} · +${d.pay} vinyl`, '#4dff8a'); Sound.streak(2); buzz(50);
+  }
+}
+function checkLogin(){
+  const k = dayKey(), L = save.login || { last: '', n: 0 };
+  if (L.last === k) return;
+  const y = dayKey(new Date(Date.now() - 864e5)), n = L.last === y ? L.n + 1 : 1, pay = LOGIN_PAY[Math.min(n, 7) - 1];
+  save.login = { last: k, n }; save.vinyl += pay; persist();
+  pushPop(n > 1 ? `DAY ${n} STREAK!` : 'DAILY BONUS', n > 1 ? `+${pay} vinyl for coming back today` : `+${pay} vinyl · come back tomorrow for more`, '#ffb84d');
+}
+// in-game pop-ups for missions and the streak, one at a time, under the clock
+const pops = [];
+function pushPop(title, sub, color){ pops.push({ title, sub, color, t0: 0 }); if (pops.length > 6) pops.shift(); }
+function drawPops(){
+  if (!pops.length || COVER) return;
+  const p = pops[0], now = performance.now(); if (!p.t0) p.t0 = now;
+  const age = (now - p.t0) / 1000, life = 3.4; if (age > life){ pops.shift(); return; }
+  const k = Math.min(1, age * 4, (life - age) * 3), y = 128 - (1 - Math.min(1, age * 5)) * 18;
+  let fs1 = Math.round(Math.min(17, VW / 22)), fs2 = Math.round(Math.min(14, VW / 27));
+  ctx.font = `italic 900 ${fs1}px ${FONT}`; const w1 = ctx.measureText(p.title).width;
+  ctx.font = `700 ${fs2}px ${FONT}`; let w2 = ctx.measureText(p.sub).width;
+  if (w2 > VW * .84){ fs2 = Math.floor(fs2 * VW * .84 / w2); ctx.font = `700 ${fs2}px ${FONT}`; w2 = ctx.measureText(p.sub).width; }
+  const w = Math.min(VW * .94, Math.max(w1, w2) + 44), h = 54;
+  ctx.globalAlpha = k; rr(VW / 2 - w / 2, y - h / 2, w, h, 18); ctx.fillStyle = 'rgba(12,9,32,.9)'; ctx.fill();
+  ctx.shadowColor = p.color; ctx.shadowBlur = 16; ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.stroke(); ctx.shadowBlur = 0;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `italic 900 ${fs1}px ${FONT}`; ctx.fillStyle = p.color; ctx.fillText(p.title, VW / 2, y - 10);
+  ctx.font = `700 ${fs2}px ${FONT}`; ctx.fillStyle = '#e8e2ff'; ctx.fillText(p.sub, VW / 2, y + 11);
+  ctx.globalAlpha = 1;
+}
+function misProgText(d, v){ return d.time ? `${fmtTime(Math.min(v, d.goal))} / ${fmtTime(d.goal)}` : `${Math.min(Math.floor(v), d.goal).toLocaleString('en-US')} / ${d.goal.toLocaleString('en-US')}`; }
+function renderMissions(){
+  ensureMissions();
+  const M = save.mis, DISC = '<svg><use href="#i-disc"/></svg>';
+  $('misList').innerHTML = M.ids.map(id => {
+    const d = misDef(id), v = M.prog[id] || 0, done = !!M.done[id], pct = Math.round(Math.min(1, v / d.goal) * 100);
+    return `<div class="mrow${done ? ' done' : ''}"><div class="mchk" style="--p:${pct}">${done ? '✓' : `<span>${pct}%</span>`}</div><div class="mt"><b>${d.text}</b><small>${done ? 'Done' : misProgText(d, v)}</small><div class="mbar"><i style="width:${pct}%"></i></div></div><span class="mpay">+${d.pay}${DISC}</span></div>`;
+  }).join('');
+  const t = new Date(), nx = new Date(t); nx.setHours(24, 0, 0, 0); const sec = Math.max(0, Math.floor((nx - t) / 1000));
+  $('misReset').textContent = `New missions in ${Math.floor(sec / 3600)}h ${String(Math.floor(sec % 3600 / 60)).padStart(2, '0')}m`;
+  const L = save.login || { n: 0 }, n = L.n || 0, nextPay = LOGIN_PAY[Math.min(n + 1, 7) - 1];
+  $('streakRow').innerHTML = `<span class="fl">🔥</span><div style="flex:1"><b>Day ${Math.max(1, n)} streak</b><small>Come back tomorrow for +${nextPay} vinyl</small><div class="sdots">${Array.from({ length: 7 }, (_, i) => `<i class="${i < Math.min(n, 7) ? 'on' : ''}"></i>`).join('')}</div></div>`;
+}
+function renderTracks(){
+  $('tracks').innerHTML = TRACKS.map(t => {
+    const un = trackUnlocked(t), on = un && save.track === t.id;
+    const sub = un ? `${t.bpm} BPM` : `🔒 ${fmtTime(t.unlockT)} or ${t.cost}`;
+    return `<button class="trk${on ? ' on' : ''}${un ? '' : ' lock'}" data-t="${t.id}" style="--tc:${t.color}"><b>${t.name}</b><small>${sub}</small></button>`;
+  }).join('');
+}
+// tracks unlock for good once your best time reaches the mark (or you buy them with vinyl)
+function checkTrackUnlocks(){
+  for (const t of TRACKS) if (t.unlockT && !save.tracks.includes(t.id) && save.best >= t.unlockT){ save.tracks.push(t.id); persist(); pushPop('NEW TRACK UNLOCKED', `${t.name} · pick it on the menu`, t.color); }
+}
+
+/* ================= Run end ================= */
+function vinylFor(){ return Math.floor(G.kills / 25) + Math.floor(G.t / 20) + G.vinylBonus + (G.won ? 50 : 0); }
+function onDeath(){
+  if (!save.tutorialDone){ save.tutorialDone = true; persist(); }
+  Portal.gameplayStop();
+  setTimeout(() => { if (G && G.dead) showOver(); }, 700);
+}
+function showOver(){
+  screen = 'over';
+  const v = vinylFor(), banked = G.banked || 0, add = v - banked;
+  G.banked = v; save.vinyl += add;
+  const best = G.t > save.best; if (best) save.best = Math.floor(G.t);
+  save.bestKills = Math.max(save.bestKills, G.kills); save.runs++;
+  checkTrackUnlocks();
+  if (G.daily){ const k = dayKey(); const prev = save.daily[k]; if (!prev || G.t > prev.t) save.daily[k] = { t: Math.floor(G.t), kills: G.kills, level: G.level, w: Object.keys(G.weapons).map(id => WEAPONS[id].ic).join('') }; }
+  persist();
+  $('oTitle').textContent = G.won ? 'Set finished' : 'The music stopped';
+  $('oTime').textContent = fmtTime(G.t);
+  $('oBest').textContent = best ? 'New best time!' : 'Best ' + fmtTime(save.best);
+  $('oKills').textContent = G.kills; $('oLevel').textContent = G.level; $('oVinyl').textContent = '+' + add;
+  $('reviveBtn').style.display = G.revived || G.won || G.quit ? 'none' : 'flex';
+  $('shareBtn').style.display = G.daily ? 'flex' : 'none';
+  { const M = save.mis; $('oMis').innerHTML = M ? M.ids.map(id => { const d = misDef(id), done = !!M.done[id], v = M.prog[id] || 0;
+      return `<span class="${done ? 'done' : ''}${G.misDone.includes(id) ? ' new' : ''}">${done ? '✓' : Math.round(Math.min(1, v / d.goal) * 100) + '%'} ${d.short}</span>`; }).join('') : ''; }
+  show('over');
+}
+async function revive(){
+  if (!G || G.revived || !G.dead) return;
+  if (!(await Portal.rewarded())) return;
+  const P = G.P; G.revived = true; G.dead = false; P.hp = maxHp(); P.inv = 2.5;
+  G.rings.push({ x: P.x, y: P.y, r: 20, max: 420, dmg: 9999, knock: 600, c: '#ffffff', life: 1, hitSet: new Set(), follow: false, thick: true });
+  G.foes = []; banner('ENCORE!'); Sound.crash(1.4);
+  screen = 'play'; show(null); last = performance.now(); Portal.gameplayStart();
+}
+function onWin(){ screen = 'win'; Portal.gameplayStop(); Portal.happytime(); Sound.crash(1.5); show('win'); }
+async function share(){
+  const r = save.daily[dayKey()]; if (!r) return;
+  const url = !Portal.onPortal && /^https?:/.test(location.href) ? '\n' + location.origin + location.pathname : '';
+  const text = `Bassline · Daily Mix #${dailyNumber()}\n⏱ ${fmtTime(r.t)} · 💀 ${r.kills} · Lv ${r.level}\n${r.w}${url}`;
+  try { if (navigator.share){ await navigator.share({ text }); return; } } catch(e){ if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(text); toast('Copied. Paste it anywhere'); } catch(e){ prompt('Copy your result:', text); }
+}
+
+/* ================= Screens ================= */
+function show(id){
+  for (const s of ['menu', 'lvl', 'over', 'win', 'studio', 'paused']) $(s).classList.toggle('on', s === id);
+  $('pauseBtn').style.display = (id === null) ? 'grid' : 'none';
+}
+function refreshMenu(){
+  $('mBest').textContent = fmtTime(save.best); $('mVinyl').textContent = save.vinyl; $('mKills').textContent = save.bestKills;
+  const d = save.daily[dayKey()];
+  $('dName').textContent = `Daily Mix #${dailyNumber()}`;
+  $('dSubM').textContent = d ? `Today: ${dailyTrack().name} · your best ${fmtTime(d.t)}` : `Today's track: ${dailyTrack().name} · same for everyone`;
+  checkTrackUnlocks(); renderTracks(); renderMissions();
+  $('muteTx').textContent = 'Sound: ' + (save.muted ? 'off' : 'on');
+  $('muteIco').setAttribute('href', save.muted ? '#i-mute' : '#i-sound');
+}
+function renderStudio(){
+  $('sVinyl').textContent = save.vinyl;
+  $('shop').innerHTML = META.map(m => {
+    const L = meta(m.id), maxed = L >= m.max, c = metaCost(m);
+    return `<div class="item"><svg class="ic"><use href="#m-${m.id}"/></svg><span class="t"><b>${m.name} <span>${L}/${m.max}</span></b><small>${m.desc}</small></span><button data-m="${m.id}" ${maxed || save.vinyl < c ? 'disabled' : ''}>${maxed ? 'Max' : c + '<svg><use href="#i-disc"/></svg>'}</button></div>`;
+  }).join('');
+}
+let studioFrom = 'menu';
+function startRun(daily = false, wait = false){
+  // wait: the run is on screen but frozen until the first move (used when the page opens straight into play)
+  if (!wait) Sound.init();
+  newRun(daily);
+  if (daily) mis('daily', 1, true); G.waiting = wait; screen = 'play'; paused = false; show(null); last = performance.now();
+  // report gameplay as soon as the run is on screen, even while it waits for the first move:
+  // CrazyGames measures load time up to this call, so waiting for the player would count their hesitation as loading
+  Portal.gameplayStart();
+}
+// the first key, drag or click of a waiting run: music on, clock running
+function firstMove(){
+  if (!G || !G.waiting) return;
+  G.waiting = false; Sound.init(); last = performance.now(); Portal.gameplayStart();
+}
+async function playAgain(){
+  runsSinceAd++; if (runsSinceAd >= 3){ runsSinceAd = 0; await Portal.interstitial(); }
+  startRun(G && G.daily);
+}
+function toMenu(){ G = null; screen = 'menu'; paused = false; refreshMenu(); show('menu'); Portal.gameplayStop(); }
+function pause(){ if (screen !== 'play' || !G || G.dead) return; persist(); paused = true; screen = 'paused'; show('paused'); Portal.gameplayStop(); }
+function resume(){ paused = false; screen = 'play'; show(null); last = performance.now(); Portal.gameplayStart(); }
+
+/* ================= Input ================= */
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (screen === 'play' && /^(Arrow|Key[WASD]$)/.test(e.code)) firstMove();
+  if (e.code === 'Escape' || e.code === 'KeyP'){ screen === 'paused' ? resume() : pause(); }
+  if (screen === 'lvl' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) choose(+e.code.slice(-1) - 1);
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('blur', () => { keys = {}; });
+cvs.addEventListener('pointerdown', e => { if (screen !== 'play') return; firstMove(); joy = { active: true, id: e.pointerId, ox: e.clientX, oy: e.clientY, dx: 0, dy: 0 }; cvs.setPointerCapture(e.pointerId); });
+cvs.addEventListener('pointermove', e => {
+  if (!joy || !joy.active || e.pointerId !== joy.id) return;
+  let dx = (e.clientX - joy.ox) / 50, dy = (e.clientY - joy.oy) / 50; const m = Math.hypot(dx, dy);
+  if (m > 1){ joy.ox = e.clientX - dx / m * 50; joy.oy = e.clientY - dy / m * 50; dx /= m; dy /= m; }    // the stick follows your thumb
+  joy.dx = dx; joy.dy = dy;
+});
+const endJoy = e => { if (joy && e.pointerId === joy.id) joy = null; };
+cvs.addEventListener('pointerup', endJoy); cvs.addEventListener('pointercancel', endJoy);
+document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+
+$('playBtn').onclick = () => startRun(false);
+$('dailyBtn').onclick = () => startRun(true);
+$('studioBtn').onclick = () => { studioFrom = 'menu'; renderStudio(); show('studio'); };
+$('oStudioBtn').onclick = () => { studioFrom = 'over'; renderStudio(); show('studio'); };
+$('sBackBtn').onclick = () => { if (studioFrom === 'over' && G){ show('over'); } else toMenu(); };
+$('shop').onclick = e => {
+  const b = e.target.closest('button[data-m]'); if (!b) return;
+  const m = META.find(x => x.id === b.dataset.m), c = metaCost(m);
+  if (save.vinyl < c || meta(m.id) >= m.max) return;
+  save.vinyl -= c; save.meta[m.id] = meta(m.id) + 1; persist(); Sound.init(); Sound.level(); renderStudio();
+};
+$('choices').onclick = e => { const b = e.target.closest('.choice'); if (b) choose(+b.dataset.i); };
+$('rerollBtn').onclick = reroll;
+$('reviveBtn').onclick = revive;
+$('againBtn').onclick = playAgain;
+$('oMenuBtn').onclick = toMenu;
+$('shareBtn').onclick = share;
+$('encoreBtn').onclick = () => { G.vinylBonus += 0; screen = 'play'; show(null); last = performance.now(); Portal.gameplayStart(); };
+$('endBtn').onclick = () => { G.dead = true; showOver(); };
+$('pauseBtn').onclick = pause;
+$('resumeBtn').onclick = resume;
+$('quitBtn').onclick = () => { G.dead = true; G.quit = true; showOver(); };
+$('tracks').onclick = e => {
+  const b = e.target.closest('.trk'); if (!b) return; const t = trackById(b.dataset.t);
+  if (!trackUnlocked(t)){
+    if (save.vinyl >= t.cost){ save.vinyl -= t.cost; save.tracks.push(t.id); Sound.init(); Sound.level(); toast(`${t.name} unlocked!`); }
+    else { toast(`Survive ${fmtTime(t.unlockT)} or save ${t.cost} vinyl`); return; }
+  }
+  save.track = t.id; persist(); refreshMenu();
+};
+$('muteBtn').onclick = () => { save.muted = !save.muted; persist(); Sound.setMuted(save.muted); refreshMenu(); };
+
+/* ================= Loop ================= */
+let last = performance.now(), slowAvg = 1 / 60;
+let loggedErr = false;
+function frame(t){
+  requestAnimationFrame(frame);                 // schedule first, so one bad frame can never freeze the game
+  const raw = (t - last) / 1000, dt = Math.max(0, Math.min(raw, 1 / 30)); last = t;   // never negative: a frame can be stamped before a click reset `last`
+  try {
+    // frame-rate guard: if frames average over ~22 ms for a few seconds of play, render at 1x pixels
+    if (!lowRes && G && screen === 'play' && raw < .5){ slowAvg = slowAvg * .97 + raw * .03; if (slowAvg > .022 && G.t > 5){ lowRes = true; resize(); } }
+    if (G && screen === 'play' && !paused && !G.dead && !G.waiting) update(dt);
+    else if (G && G.dead){ for (const p of G.parts){ p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; } }
+    draw();
+  } catch(err){
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    if (!loggedErr){ loggedErr = true; console.error('Bassline frame error', err); }
+  }
+}
+function boot(){
+  ensureMissions(); if (!COVER) checkLogin(); persist();
+  refreshMenu();
+  if (!/[?&](debug|cover|menu)\b/.test(location.search)) startRun(false, true); else show('menu');
+}
+if (saveReady) boot();
+else {
+  // on CrazyGames: keep the menu hidden (no clicks on a half-loaded save) until the player's data is in
+  $('menu').classList.remove('on');
+  Portal.loadSave(SAVE_KEY).then(str => { applySave(str); saveReady = true; boot(); });
+}
+requestAnimationFrame(frame);
+
+window.BL3D = { get G(){ return G; }, get scale(){ return scale; }, get dpr(){ return dpr; }, maxHp, magnetR, orbs };
+if (/[?&]debug\b/.test(location.search)) window.__bl = {
+  get G(){ return G; }, get screen(){ return screen; }, set screen(v){ screen = v; },
+  draw, setView(w, h){ VW = w; VH = h; scale = clamp(Math.min(VW, VH) / 620, .5, 1.4); },
+  Sound, newRun, update, choose, get offer(){ return G && G.offer; }, setBot(v){ botInput = v; }, WEAPONS, WSTAT, xpNeed, bpm, maxHp, save, show,
+  TRACKS, MISSIONS, setTrack(id){ save.track = id; if (!save.tracks.includes(id)) save.tracks.push(id); }, mis, pops, refreshMenu, renderMissions, ensureMissions, checkLogin,
+};
+})();
+</script>
+<script type="module" src="world3d.js" onerror="dispatchEvent(new Event('world3dfail'))"></script>
+</body>
+</html>
